@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ARENA</title>
+  <meta name="description" content="ARENA — een kleurrijke, competitieve 3D-arcade shooter." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/ui/styles.css" />
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <!-- HOOFDMENU -->
+  <div id="menu" class="screen show">
+    <header class="menu-top">
+      <div class="logo"><span class="logo-a">A</span>RENA<sup>beta</sup></div>
+      <div class="profile-chip" id="profileChip"></div>
+    </header>
+
+    <nav class="menu-nav" id="menuNav">
+      <button data-tab="play" class="active"><span>Spelen</span></button>
+      <button data-tab="skins"><span>Personages</span></button>
+      <button data-tab="board"><span>Ranglijst</span></button>
+      <button data-tab="settings"><span>Instellingen</span></button>
+    </nav>
+
+    <section class="panel" id="panel-play">
+      <h2>Kies je arena</h2>
+      <div class="arena-cards" id="arenaCards"></div>
+      <div class="mode-row">
+        <div class="mode">
+          <div class="mode-title">Vrij-voor-allen</div>
+          <div class="mode-meta">6 spelers · 3 minuten · eerste tot 15 KO's</div>
+        </div>
+        <div class="segmented" id="difficulty"></div>
+      </div>
+      <label class="field"><span>Spelersnaam</span><input id="nameInput" maxlength="14" autocomplete="off" /></label>
+      <button class="btn primary big" id="startBtn">Start match <span class="arrow">→</span></button>
+      <p class="hint">Klik in het spel om de muis vast te zetten · <kbd>Esc</kbd> pauzeert</p>
+    </section>
+
+    <section class="panel" id="panel-skins">
+      <h2>Personages</h2>
+      <p class="sub">Verdien XP in matches om nieuwe personages vrij te spelen.</p>
+      <div class="xp-bar"><div id="xpFill"></div><span id="xpText"></span></div>
+      <div class="skin-grid" id="skinGrid"></div>
+    </section>
+
+    <section class="panel" id="panel-board">
+      <h2>Seizoensranglijst</h2>
+      <p class="sub" id="rankLine"></p>
+      <div class="board-list" id="seasonBoard"></div>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section class="panel" id="panel-settings">
+      <h2>Instellingen</h2>
+      <div class="setting">
+        <div><b>Grafische kwaliteit</b><small>Automatisch past zich aan je laptop aan</small></div>
+        <div class="segmented" id="qualitySeg"></div>
+      </div>
+      <div class="setting">
+        <div><b>Muisgevoeligheid</b><small id="sensVal"></small></div>
+        <input type="range" id="sens" min="0.3" max="2.5" step="0.05" />
+      </div>
+      <div class="setting">
+        <div><b>Volume</b><small id="volVal"></small></div>
+        <input type="range" id="vol" min="0" max="1" step="0.05" />
+      </div>
+      <div class="setting">
+        <div><b>Camerashake</b><small>Schudden bij explosies</small></div>
+        <label class="toggle"><input type="checkbox" id="shakeToggle" /><i></i></label>
+      </div>
+      <div class="setting">
+        <div><b>FPS tonen</b><small>Prestaties in beeld</small></div>
+        <label class="toggle"><input type="checkbox" id="fpsToggle" /><i></i></label>
+      </div>
+    </section>
+
+    <div class="preview-name" id="previewName"></div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud" class="screen"></div>
+
+  <!-- RESULTATEN -->
+  <div id="results" class="screen">
+    <div class="results-wrap">
+      <div class="results-head">
+        <div class="place" id="resPlace"></div>
+        <div class="res-title" id="resTitle"></div>
+      </div>
+      <div class="podium" id="podium"></div>
+      <div class="res-grid">
+        <div class="res-card" id="resBoard"></div>
+        <div class="res-card rewards" id="resRewards"></div>
+      </div>
+      <div class="row center">
+        <button class="btn primary big" id="againBtn">Nog een match</button>
+        <button class="btn ghost big" id="menuBtn">Naar menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="fade"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
