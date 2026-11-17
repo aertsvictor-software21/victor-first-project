@@ -80,7 +80,7 @@ export class Hud {
     this.tags.clear();
     const p = match.player;
     this.el.pname.textContent = p.name;
-    this.el.goal.innerHTML = `Eerste tot <b>${match.rules.scoreLimit}</b> KO's`;
+    this.el.goal.innerHTML = `Eerste tot <b>${match.rules.scoreLimit}</b> eliminaties`;
     this.el.pops.innerHTML = '';
     this.el.portrait.style.background = `radial-gradient(circle at 35% 30%, #fff8 0 18%, transparent 19%), ${hex(p.skin.body)}`;
     this.el.portrait.style.borderColor = hex(p.skin.accent);
@@ -192,7 +192,7 @@ export class Hud {
   renderBoard(el, st, final) {
     el.innerHTML = `<div class="board-card">
       <h3>${final ? 'Eindstand' : 'Scorebord'}</h3>
-      <table><thead><tr><th>#</th><th>Speler</th><th>KO</th><th>Uit</th><th>Schade</th></tr></thead><tbody>
+      <table><thead><tr><th>#</th><th>Speler</th><th>Elim</th><th>Uit</th><th>Schade</th></tr></thead><tbody>
       ${st.map((f, i) => `<tr class="${f.isPlayer ? 'you' : ''} ${i < 3 ? 'p' + (i + 1) : ''}"><td><span class="pos">${i + 1}</span></td><td><i style="background:${hex(f.skin.body)}"></i>${f.name}</td><td><b>${f.kills}</b></td><td>${f.deaths}</td><td>${f.damageDealt}</td></tr>`).join('')}
       </tbody></table></div>`;
   }
@@ -233,10 +233,10 @@ export class Hud {
   }
 
   koBanner(victim, streak, multi = 1) {
-    const labels = { 2: 'Reeks van 2', 3: 'Op dreef!', 4: 'Niet te stoppen!', 5: 'Legendarisch!' };
-    const titles = { 2: 'DUBBEL!', 3: 'DRIEDUBBEL!', 4: 'VIERVOUDIG!' };
+    const labels = { 2: '2 op rij', 3: 'Op dreef', 4: 'Dominant', 5: 'Onstuitbaar' };
+    const titles = { 2: 'DUBBELE ELIMINATIE', 3: 'TRIPLE ELIMINATIE', 4: 'NIET TE STOPPEN' };
     const k = this.el.ko;
-    k.innerHTML = `<div class="ko-title ${multi > 1 ? 'multi' : ''}">${titles[Math.min(multi, 4)] || 'KO!'}</div><div class="ko-sub">Je raakte <b style="color:${hex(victim.skin.body)}">${victim.name}</b>${streak > 1 ? ` · <span class="streak">${labels[Math.min(streak, 5)]}</span>` : ''}</div>`;
+    k.innerHTML = `<div class="ko-title ${multi > 1 ? 'multi' : ''}">${titles[Math.min(multi, 4)] || 'ELIMINATIE'}</div><div class="ko-sub">Uitgeschakeld: <b style="color:${hex(victim.skin.body)}">${victim.name}</b>${streak > 1 ? ` · <span class="streak">${labels[Math.min(streak, 5)]}</span>` : ''}</div>`;
     k.classList.remove('show'); void k.offsetWidth; k.classList.add('show');
   }
 

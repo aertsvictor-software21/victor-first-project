@@ -15,7 +15,7 @@ export const ARENAS = [
     swatch: ['#6BD35A', '#3DD6F5', '#FFC83D'],
     sky: { top: 0x3ea6ff, horizon: 0xc4ecff, bottom: 0xe9f8ff },
     hemi: [0xcfeeff, 0x6bbf4e],
-    sun: 0xfff1d0,
+    sun: 0xffe2b0,
     build: buildMeadow,
   },
   {
@@ -25,7 +25,7 @@ export const ARENAS = [
     swatch: ['#F6DC9A', '#2FD9E0', '#FF7A63'],
     sky: { top: 0x47c1ff, horizon: 0xd8f6ff, bottom: 0xf0fcff },
     hemi: [0xdaf6ff, 0xf3d999],
-    sun: 0xfff3dc,
+    sun: 0xffe6c0,
     build: buildBeach,
   },
   {
@@ -35,7 +35,7 @@ export const ARENAS = [
     swatch: ['#B9A6FF', '#9FF2C9', '#FFFFFF'],
     sky: { top: 0x6f8dff, horizon: 0xf1e6ff, bottom: 0xffffff },
     hemi: [0xeee6ff, 0xb9a6ff],
-    sun: 0xfff6ea,
+    sun: 0xfff0dc,
     build: buildSkyGarden,
   },
 ];

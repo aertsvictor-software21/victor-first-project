@@ -4,19 +4,19 @@ import { FX_COLORS } from '../style/palette.js';
 // Wapens. Elk wapen heeft een eigen rol, kleur en effect.
 export const WEAPONS = {
   blaster: {
-    id: 'blaster', name: 'Bubbelblaster', key: '1', icon: '◉',
+    id: 'blaster', name: 'Pulsgeweer', key: '1', icon: '◉',
     fireRate: 9, damage: 9, headMul: 1.6, speed: 70, gravity: 0, spread: 0.012,
     mag: 24, reload: 1.1, radius: 0.16, splash: 0, bounces: 0, life: 1.2, knock: 1.5,
     colors: FX_COLORS.blaster, botRange: 16,
   },
   bouncer: {
-    id: 'bouncer', name: 'Stuiterkanon', key: '2', icon: '●',
+    id: 'bouncer', name: 'Stuiterwerper', key: '2', icon: '●',
     fireRate: 2.1, damage: 24, headMul: 1, speed: 30, gravity: 22, spread: 0.01,
     mag: 6, reload: 1.5, radius: 0.28, splash: 2.8, splashDamage: 30, bounces: 2, life: 2.2, knock: 9,
     colors: FX_COLORS.bouncer, botRange: 12,
   },
   rocket: {
-    id: 'rocket', name: 'Konfettiraket', key: '3', icon: '▲',
+    id: 'rocket', name: 'Raketwerper', key: '3', icon: '▲',
     fireRate: 1.0, damage: 40, headMul: 1, speed: 34, gravity: 0, spread: 0,
     mag: 3, reload: 2.0, radius: 0.3, splash: 3.6, splashDamage: 48, bounces: 0, life: 3, knock: 15,
     colors: FX_COLORS.rocket, botRange: 18, shake: 0.5,
@@ -99,7 +99,7 @@ export class Projectiles {
       let hitChar = null, hitT = Infinity, head = false;
       for (const c of chars) {
         if (c === p.owner || !c.alive) continue;
-        for (const [cy, cr, isHead] of [[0.75, 0.55, false], [1.5, 0.55, true]]) {
+        for (const [cy, cr, isHead] of [[1.1, 0.55, false], [1.9, 0.38, true]]) {
           const center = this._tmp.set(c.pos.x, c.pos.y + cy, c.pos.z);
           const t = segSphere(p.pos, dir, dist, center, cr + p.w.radius);
           if (t !== null && t < hitT) { hitT = t; hitChar = c; head = isHead; }

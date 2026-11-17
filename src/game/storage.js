@@ -2,13 +2,13 @@
 const KEY = 'arena.v2';
 
 const RIVALS = [
-  ['Zefier', 1420], ['Pompom', 1360], ['Tikkie', 1310], ['Noor', 1265], ['Bliksem', 1220],
-  ['Lotte', 1180], ['Rakker', 1140], ['Juno', 1105], ['Fizz', 1070], ['Moos', 1030],
-  ['Saffier', 990], ['Kobus', 960], ['Wiebel', 930], ['Ster', 900],
+  ['Zephyr', 1420], ['Nyx', 1360], ['Kyro', 1310], ['Raze', 1265], ['Bolt', 1220],
+  ['Juno', 1180], ['Vex', 1140], ['Onyx', 1105], ['Kite', 1070], ['Rogue', 1030],
+  ['Hex', 990], ['Saffier', 960], ['Drift', 930], ['Sable', 900],
 ];
 
 const defaults = () => ({
-  profile: { name: 'Speler', skin: 'pip', xp: 0, rating: 1000, matches: 0, wins: 0, bestKOs: 0, totalKOs: 0, lifetime: { ringOuts: 0, headshots: 0 }, achievements: [], arenaWins: [], streakSkin: false },
+  profile: { name: 'Player', skin: 'pip', xp: 0, rating: 1000, matches: 0, wins: 0, bestKOs: 0, totalKOs: 0, lifetime: { ringOuts: 0, headshots: 0 }, achievements: [], arenaWins: [], streakSkin: false },
   settings: { quality: 'auto', sensitivity: 1, screenShake: true, showFps: false, volume: 0.5, difficulty: 'auto', arena: 'zonneweide', mode: 'standaard' },
   daily: null,
   streak: { count: 0, last: null, best: 0 },

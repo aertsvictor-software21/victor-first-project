@@ -12,8 +12,8 @@ import { levelInfo, titleFor, dailyChallenges, challengeDef, matchStatValues, ap
 
 // Speelmodi: korte matches houden de "nog één potje"-drempel laag (ideaal voor een pauze).
 const MODES = {
-  flits: { label: 'Flitsmatch', duration: 90, scoreLimit: 10, meta: '6 spelers · 90 seconden · eerste tot 10 KO\'s' },
-  standaard: { label: 'Standaard', duration: 180, scoreLimit: 15, meta: '6 spelers · 3 minuten · eerste tot 15 KO\'s' },
+  flits: { label: 'Flitsmatch', duration: 90, scoreLimit: 10, meta: '6 spelers · 90 seconden · eerste tot 10 eliminaties' },
+  standaard: { label: 'Standaard', duration: 180, scoreLimit: 15, meta: '6 spelers · 3 minuten · eerste tot 15 eliminaties' },
 };
 
 const $ = (s) => document.querySelector(s);
@@ -42,10 +42,10 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.1, 600);
 
-const hemi = new THREE.HemisphereLight(0xcfeeff, 0x6bbf4e, 1.5);
+const hemi = new THREE.HemisphereLight(0xcfeeff, 0x6bbf4e, 1.15);
 scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xfff1d0, 2.3);
-sun.position.set(28, 46, 18);
+const sun = new THREE.DirectionalLight(0xffe4b8, 3.0);
+sun.position.set(36, 34, 16);
 sun.shadow.camera.left = -38; sun.shadow.camera.right = 38;
 sun.shadow.camera.top = 38; sun.shadow.camera.bottom = -38;
 sun.shadow.camera.near = 5; sun.shadow.camera.far = 120;
@@ -123,7 +123,6 @@ function updateShowcase(dt, t) {
     else preview.fire(1.5);
   }
   const base = preview.root.position;
-  preview.root.rotation.y = Math.sin(t * 0.4) * 0.5 + 0.3;
   preview.update(dt, { speed: 0, onGround: true, aimPitch: Math.sin(t * 0.7) * 0.1, t });
   // camera iets links van het personage, zodat het menu-paneel rechts vrij is
   const ang = t * 0.05 + 0.5;
@@ -131,6 +130,7 @@ function updateShowcase(dt, t) {
   const camTarget = new THREE.Vector3(base.x, base.y + 1.1, base.z);
   const offset = new THREE.Vector3(Math.sin(ang) * 7, 2.6, Math.cos(ang) * 7);
   camera.position.copy(camTarget).add(offset);
+  preview.root.rotation.y = ang + Math.sin(t * 0.5) * 0.35 - 0.25; // kijk richting camera
   const right = new THREE.Vector3(Math.cos(ang), 0, -Math.sin(ang));
   camera.lookAt(camTarget.clone().addScaledVector(right, wide ? 1.4 : 0).setY(camTarget.y + 0.3));
   camera.fov = 50;
@@ -238,7 +238,7 @@ function renderBoard() {
     const t = rank(x.rating);
     return `<div class="board-row ${x.you ? 'you' : ''} ${x.rank <= 3 ? 'r' + x.rank : ''}"><span class="pos">${x.rank}</span><span>${x.name}${x.you ? ' (jij)' : ''}</span><span class="tier" style="background:${t.color}">${t.name}</span><span class="rating">${x.rating}</span></div>`;
   }).join('');
-  $('#stats').innerHTML = [['Matches', p.matches], ['Gewonnen', p.wins], ["KO's totaal", p.totalKOs], ['Beste match', p.bestKOs]]
+  $('#stats').innerHTML = [['Matches', p.matches], ['Gewonnen', p.wins], ['Eliminaties', p.totalKOs], ['Beste match', p.bestKOs]]
     .map(([l, v]) => `<div class="stat"><b>${v}</b><small>${l}</small></div>`).join('');
 }
 
@@ -279,12 +279,12 @@ const resolveDifficulty = () => {
   return r < 1060 ? 'easy' : r < 1220 ? 'normal' : 'hard';
 };
 $('#nameInput').value = state.profile.name;
-$('#nameInput').oninput = (e) => { state.profile.name = e.target.value.trim().slice(0, 14) || 'Speler'; persist(); renderProfile(); };
+$('#nameInput').oninput = (e) => { state.profile.name = e.target.value.trim().slice(0, 14) || 'Player'; persist(); renderProfile(); };
 
 // ------------------------------------------------------------------
 // Match-verloop
 // ------------------------------------------------------------------
-const BOT_NAMES = ['Zefier', 'Pompom', 'Tikkie', 'Noor', 'Bliksem', 'Lotte', 'Rakker', 'Juno', 'Fizz', 'Moos', 'Saffier', 'Wiebel'];
+const BOT_NAMES = ['Zephyr', 'Nyx', 'Kyro', 'Raze', 'Bolt', 'Juno', 'Vex', 'Onyx', 'Kite', 'Rogue', 'Hex', 'Drift', 'Sable', 'Lynx'];
 
 let starting = false;
 function startMatch() {
@@ -463,7 +463,7 @@ function showResults(st) {
   const nextSkin = SKINS.find((s) => s.unlockXp > prof.xp);
 
   $('#resPlace').textContent = `#${place}`;
-  $('#resTitle').innerHTML = (place === 1 ? 'Winnaar! Niemand hield je tegen.' : place <= 3 ? 'Op het podium — sterk gespeeld!' : 'Goed gevochten — volgende keer hoger!') + (isRecord ? '<span class="record">Nieuw record: ' + p.kills + " KO's</span>" : '');
+  $('#resTitle').innerHTML = (place === 1 ? 'Kampioen van de arena' : place <= 3 ? 'Podiumplek — sterk gespeeld' : 'Goed gevochten — pak ze de volgende ronde') + (isRecord ? '<span class="record">Nieuw record: ' + p.kills + " eliminaties</span>" : '');
   const order = [st[1], st[0], st[2]];
   $('#podium').innerHTML = order.map((f, i) => f ? `<div class="pod p${[2, 1, 3][i]}"><div class="who">${f.name}${f.isPlayer ? ' (jij)' : ''}</div><div class="ball" style="background:${hex(f.skin.body)}"></div><div class="block">${[2, 1, 3][i]}</div></div>` : '').join('');
   hud.renderBoard($('#resBoard'), st, true);
@@ -472,7 +472,7 @@ function showResults(st) {
     <div class="lvl-row"><div class="lvl-badge ${leveled ? 'up' : ''}">${L.level}</div><div style="flex:1"><div class="lvl-bar"><i id="lvlFill"></i></div>
       <div class="lvl-meta">${leveled ? `<b>Level omhoog!</b>${titleFor(L.level) !== titleFor(prevLevel) ? ` Nieuwe titel: ${titleFor(L.level)}` : ''}` : `Nog ${L.need - L.into} XP tot level ${L.level + 1}`}${nextSkin ? ` · ${nextSkin.unlockXp - prof.xp} XP tot ${nextSkin.name}` : ''}</div></div></div>
     ${row('Match + plaats', '+' + (baseXp + placeXp))}
-    ${row("KO's", '+' + koXp)}
+    ${row("Eliminaties", '+' + koXp)}
     ${bonusXp ? row('Bonussen (multi, reeks, wraak…)', '+' + bonusXp) : ''}
     ${doneChallenges.map((c) => row('✔ ' + c.text, '+' + c.xp)).join('')}
     ${row('Ranglijstpunten', (ratingDelta >= 0 ? '+' : '') + ratingDelta + ` → ${prof.rating}`, ratingDelta >= 0 ? 'up' : 'down')}

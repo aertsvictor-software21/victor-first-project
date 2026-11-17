@@ -5,7 +5,7 @@ import { PALETTE } from './palette.js';
 let gradient = null;
 export function toonGradient() {
   if (!gradient) {
-    const data = new Uint8Array([120, 190, 255]);
+    const data = new Uint8Array([95, 160, 215, 255]);
     gradient = new THREE.DataTexture(data, data.length, 1, THREE.RedFormat);
     gradient.minFilter = THREE.NearestFilter;
     gradient.magFilter = THREE.NearestFilter;

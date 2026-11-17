@@ -1,7 +1,7 @@
 # ARENA
 
-Een kleurrijke, vrolijke en competitieve **3D-arcade shooter** in de browser (Three.js).
-Toegankelijk op het eerste gezicht, snel en vaardigheidsgericht tijdens het spelen.
+Een gestileerde, kleurrijke en competitieve **3D-arena-shooter** in de browser (Three.js),
+met een strakke, volwassen look voor tieners: heroïsche personages, donkere HUD en felle accenten.
 
 > De visuele richting staat beschreven in [`docs/ART_DIRECTION.md`](docs/ART_DIRECTION.md).
 
@@ -41,26 +41,25 @@ Op zwakkere toestellen (Chromebooks, ≤ 4 cores of ≤ 4 GB geheugen) start de 
 
 - **3 arena's met eigen karakter** — Zonneweide (grasland + vijver), Koraalbaai (strand + lagune), Wolkentuin (zwevende eilanden).
   Springplatforms, water dat je vertraagt, dekking op meerdere hoogtes en health-pickups.
-- **Gestileerde personages** — groot hoofd, grote ogen, contourlijn, gekleurde grondring.
-  Squash & stretch, huppelende loop, salto bij dubbelsprong, knipperen, trefferflits, "pop" bij een KO.
-  8 skins, waarvan 4 vrij te spelen met XP.
-- **3 wapens met eigen effecten** — Bubbelblaster (snel, headshots), Stuiterkanon (stuitert, splash), Konfettiraket (grote knal, knockback, raketsprong).
+- **Gestileerde personages** — heroïsche proporties, signatuurkleur en unieke headgear per personage.
+  Loopanimatie vanuit de heup, salto bij dubbelsprong, trefferflits. 8 personages + 1 dagreeks-exclusief.
+- **3 wapens met eigen effecten** — Pulsgeweer (snel, headshots), Stuiterwerper (stuitert, splash), Raketwerper (grote knal, knockback, raketsprong).
 - **Duidelijke treffer-feedback** — hitmarkers, wegspringende schadecijfers (geel bij headshot), richting-indicator, vignet, camerashake.
-- **Competitief** — vrij-voor-allen met 5 bots (3 niveaus), 3 minuten of 15 KO's, scorebord, podium,
+- **Competitief** — vrij-voor-allen met 5 bots (3 niveaus), 3 minuten of 15 eliminaties, scorebord, podium,
   XP, ranglijstpunten, divisies (Brons → Diamant) en een seizoensranglijst.
 - **Licht voor laptops** — toon-shading zonder post-processing, instancing, samengevoegde statische geometrie,
   gepoolde projectielen en deeltjes, kwaliteitsniveaus Laag/Midden/Hoog en automatische terugschakeling bij lage FPS.
 
 ## Waarom je terugkomt
 
-- **Korte matches**: *Flitsmatch* (90 s, 10 KO's) of *Standaard* (3 min, 15 KO's). Met `Enter` start je meteen opnieuw.
-- **Directe beloning**: XP-popups per KO, Dubbel-/Driedubbel-KO's, reeksen, *Wraak!* op wie jou uitschakelde, ring-outs.
+- **Korte matches**: *Flitsmatch* (90 s, 10 eliminaties) of *Standaard* (3 min, 15 eliminaties). Met `Enter` start je meteen opnieuw.
+- **Directe beloning**: XP-popups per eliminatie, dubbele/triple eliminaties, reeksen, *Wraak!* op wie jou uitschakelde, ring-outs.
 - **Dagelijkse uitdagingen**: elke dag dezelfde 3 voor iedereen, zodat je kunt vergelijken met vrienden. Je ziet live wanneer je er een haalt.
 - **Levels en titels**, 12 **prestaties**, personages die je met XP vrijspeelt, ranglijstpunten en divisies.
 - **Auto-moeilijkheid**: bots worden sterker naarmate jij beter wordt.
 
 - **Dagreeks + dagelijkse beloning**: elke dag dat je speelt claim je XP (dag 1 → 7: 50 tot 300 XP).
-  Op dag 7 verdien je het exclusieve personage **Zonnestraal**, daarna elke 7e dag een bonuskist.
+  Op dag 7 verdien je het exclusieve personage **Solaris**, daarna elke 7e dag een bonuskist.
 
 Geen loot boxes en geen betalingen: alles is te verdienen door te spelen.
 

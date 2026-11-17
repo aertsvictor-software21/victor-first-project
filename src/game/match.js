@@ -348,7 +348,7 @@ export class Match {
     if (wh) best = wh.t + startT;
     for (const o of this.fighters) {
       if (o === f || !o.alive) continue;
-      for (const cy of [0.75, 1.5]) {
+      for (const cy of [1.1, 1.9]) {
         const t = segSphere(origin, dir, best, new THREE.Vector3(o.pos.x, o.pos.y + cy, o.pos.z), 0.6);
         if (t !== null && t > startT && t < best) best = t;
       }
@@ -493,12 +493,12 @@ export class Match {
     this.multi = this.time - this.lastKoT < 4 ? this.multi + 1 : 1;
     this.lastKoT = this.time;
     st.bestMulti = Math.max(st.bestMulti, this.multi);
-    const pops = [['KO', 15]];
+    const pops = [['Eliminatie', 15]];
     if (cause === 'fall') { st.ringOuts++; pops.push(['Uit de arena!', 10]); }
-    if (victim.lastHitWeapon === 'special') pops.push(['Sprongstoot-KO', 10]);
-    if (this.multi >= 2) pops.push([['', '', 'Dubbel-KO', 'Driedubbel-KO', 'Viervoudig-KO'][Math.min(this.multi, 4)] || 'Multi-KO', 10 * this.multi]);
+    if (victim.lastHitWeapon === 'special') pops.push(['Sprongstoot', 10]);
+    if (this.multi >= 2) pops.push([['', '', 'Dubbel', 'Triple', 'Quad'][Math.min(this.multi, 4)] || 'Multi', 10 * this.multi]);
     if (victim === this.nemesis) { st.revenge++; pops.push(['Wraak!', 10]); this.nemesis = null; }
-    if (p.streak === 3 || p.streak === 5 || p.streak === 8) pops.push([`Reeks van ${p.streak}`, 5 * p.streak]);
+    if (p.streak === 3 || p.streak === 5 || p.streak === 8) pops.push([`${p.streak} op rij`, 5 * p.streak]);
     pops.forEach(([label, xp], i) => setTimeout(() => this.hud.xpPop(label, xp), i * 180));
     this.bonusXp = (this.bonusXp || 0) + pops.slice(1).reduce((a, [, xp]) => a + xp, 0);
     this.hud.koBanner(victim, p.streak, this.multi);

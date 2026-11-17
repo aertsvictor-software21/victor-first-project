@@ -1,12 +1,10 @@
-# ARENA — Art Direction
+# ARENA — Art Direction (v2: volwassener, competitief)
 
-> Kleurrijk, vrolijk en toegankelijk op het eerste gezicht. Snel, competitief en vaardigheidsgericht zodra je speelt.
+> Gestileerd en kleurrijk, maar met de attitude van een competitieve shooter voor tieners.
+> Denk aan het genre van gestileerde hero-/arena-shooters, met een volledig eigen identiteit:
+> geen bestaande personages, logo's, lettertypes, menu-indelingen of herkenbare ontwerpen van andere games.
 
-Dit document legt de visuele stijl van ARENA vast. Het verandert **niet** de kern van de gameplay
-(korte matches, snelle schietgevechten, special abilities, competitieve ranglijsten) — alleen hoe de game eruitziet en aanvoelt.
-
-ARENA heeft een volledig eigen identiteit. We gebruiken geen bestaande personages, figuren, logo's,
-omgevingen of herkenbare ontwerpen uit andere games. De inspiratie is alleen de *sfeer*: helder, speels, uitnodigend.
+Dit document verandert alleen de visuele stijl. Gameplay en techniek blijven gelijk.
 
 ---
 
@@ -14,100 +12,71 @@ omgevingen of herkenbare ontwerpen uit andere games. De inspiratie is alleen de 
 
 | Principe | Betekenis |
 |---|---|
-| **Leesbaarheid eerst** | Spelers, projectielen en gevaren zijn altijd binnen een halve seconde herkenbaar. |
-| **Speels, niet kinderachtig** | Ronde vormen en vrolijke kleuren, maar strakke typografie en een premium afwerking. |
-| **Gestileerd > realistisch** | Toon-shading, egale kleurvlakken, contourlijnen. Geen fotorealisme. |
-| **Licht en open** | Daglicht, blauwe lucht, zachte schaduwen. Geen donkere of neon-zware scènes. |
-| **Licht op hardware** | Elk effect moet ook op een gewone laptop vloeiend draaien. |
+| **Cool, niet schattig** | Heroïsche proporties, vastberaden gezichten en tactische outfits. Geen bolle knuffelfiguren. |
+| **Kleur als accent** | De wereld blijft zonnig en kleurrijk. De UI is donker, en felle accenten (volt-geel, cyaan, magenta) dragen de energie. |
+| **Leesbaarheid eerst** | Elk personage heeft een signatuurkleur en een uniek silhouet door de headgear. Vijanden zijn magenta gemarkeerd. |
+| **Snel en scherp** | Schuine (skew) vormen, afgeschuinde hoeken, condensed italic typografie: alles suggereert snelheid. |
+| **Licht op hardware** | Toon-shading, geen post-processing, gedeelde materialen en samengevoegde geometrie. |
 
 ## 2. Kleurenpalet
 
-### Basis (wereld)
+### UI
 | Token | Hex | Gebruik |
 |---|---|---|
-| `sky-top` | `#4FB6FF` | Bovenkant lucht |
-| `sky-horizon` | `#BFE9FF` | Horizon / mist |
-| `grass` | `#6BD35A` | Grasvelden |
-| `grass-dark` | `#3FAE4A` | Randen, schaduwzijde |
-| `stone` | `#E8DCC6` | Rotsen, platforms |
-| `water` | `#3DD6F5` | Water |
-| `sun` | `#FFF4D6` | Zonlicht |
+| `bg` | `#0B1230` | Panelen (82% dekking + blur), achtergrond |
+| `volt` | `#FFD400` | Primaire acties, actieve tabs, #1, eigen speler |
+| `cyan` | `#2EE0FF` | Info, level, uitdagingen, eigen rij |
+| `magenta` | `#FF3D8B` | Vijanden, schade, eliminaties |
+| `mint` | `#33F0A8` | Health, voltooid, positief |
+| `violet` | `#8F5BFF` | Special ability, prestaties |
+| `orange` | `#FF7A1A` | Dagreeks, beloningen |
 
-### Accenten (UI & gameplay)
-| Token | Hex | Gebruik |
+### Wereld
+Blijft zonnig: blauwe lucht, groen gras en turquoise water. Het licht is warmer en lager (namiddagzon) voor meer contrast en langere schaduwen.
+
+## 3. Typografie
+
+- **Koppen, cijfers en labels:** *Barlow Condensed*, 700–900, *italic*, HOOFDLETTERS.
+- **Lopende tekst:** *Inter*, 400–700.
+- Cijfers in de HUD en op scoreborden zijn tabular en groot. Een timer of HP-waarde moet je in een flits kunnen lezen.
+
+## 4. Vormtaal UI
+
+- Panelen met **afgeschuinde hoeken** (`clip-path`) in plaats van ronde hoeken.
+- Knoppen en navigatie staan **schuin (skewX −8°)**, zodat ze snelheid uitstralen.
+- Gekleurde **accentrand** bovenaan een paneel (geel = algemeen, magenta = gevaar, oranje = beloning).
+- HP-balk in segmenten van 10%, schuin geplaatst.
+- Animaties duren 150–350 ms en zijn kort en krachtig: vanaf een grotere schaal op hun plek "slaan" in plaats van stuiteren.
+
+## 5. Personages
+
+- **Proporties:** brede schouders, smalle taille, lange benen, stevige boots, middelgroot hoofd (~20% van de hoogte).
+- **Uitrusting:** jas in signatuurkleur, borstplaat in accentkleur, rugzak, handschoenen. Het wapen wordt met twee handen vastgehouden.
+- **Gezicht:** kleine ogen met schuine wenkbrauwen, voor een vastberaden uitdrukking.
+- **Headgear als silhouet:** helm met vizier (Volt), omgedraaide pet (Blaze), hanenkam (Viper), koptelefoon (Nova), muts (Flash), capuchon met lichtstreep (Echo), bandana (Reef), zonnebril met stekels (Glitch) en kroon (Solaris, beloning voor de dagreeks).
+- **Animatie:** benen zwaaien vanuit de heup, de romp draait mee, subtiele squash & stretch, salto bij de dubbelsprong en een flits bij een treffer.
+
+## 6. Wapens & effecten
+
+| Wapen | Uiterlijk | Effect |
 |---|---|---|
-| `accent-sun` | `#FFC83D` | Primaire knoppen, highlights, #1 op ranglijst |
-| `accent-coral` | `#FF5D73` | Schade, waarschuwingen, vijand-markers |
-| `accent-mint` | `#2EE6A8` | Healing, positieve feedback |
-| `accent-sky` | `#3D8BFF` | Eigen team / speler |
-| `accent-grape` | `#8B5CF6` | Special abilities |
-| `ink` | `#1B2340` | Tekst, contourlijnen |
+| **Pulsgeweer** | Slank gunmetal met cyaan energielijn | Snelle cyaan pulsen, kleine impact |
+| **Stuiterwerper** | Kort en dik, oranje trommel | Stuiterende granaten, ring-explosie |
+| **Raketwerper** | Brede buis, magenta mond | Grote explosie met scherven en camerashake |
 
-**Regel:** projectielen gebruiken altijd verzadigde accentkleuren die *niet* in de omgeving van die arena voorkomen,
-zodat ze nooit opgaan in de achtergrond.
+Explosies gebruiken felgekleurde energiescherven, geen bloed. Een eliminatie geeft een flits plus een burst in de kleur van het personage.
 
-## 3. Omgevingen
+## 7. Toon van de teksten
 
-Elke arena heeft een eigen karakter, kleurcombinatie en één herkenbaar middelpunt.
-Arena's zijn compact, symmetrisch genoeg voor eerlijk spel, met duidelijke hoogteverschillen.
-
-| Arena | Karakter | Kleuren | Middelpunt |
-|---|---|---|---|
-| **Zonneweide** | Glooiend grasland, vijver, ronde rotsen | Groen, hemelsblauw, zandbeige | Vijver met springplatforms |
-| **Koraalbaai** | Zonnig strand, turquoise lagune | Zandgeel, turquoise, koraalroze | Eiland in de lagune |
-| **Wolkentuin** | Zwevende eilanden boven de wolken | Lavendel, mint, wit | Centrale zwevende toren |
-
-Opbouw: zwevend basisplateau + platforms op 2–3 hoogtes + dekking (rotsen, kratten, pilaren) + decor buiten de speelzone
-(bomen, wolken, bergen) dat nooit in de speelzone verstoort.
-
-## 4. Personages
-
-- **Silhouet:** groot hoofd (≈ 45% van de hoogte), compact lijf, korte ledematen, grote ogen.
-- **Herkenbaarheid:** iedere speler heeft een unieke hoofdkleur + accessoire (oren, antenne, pet, hoorntjes, kuif)
-  en een gekleurde ring onder de voeten. Contourlijn houdt figuren leesbaar tegen elke achtergrond.
-- **Animatie:** squash & stretch bij springen en landen, huppelende loop, lean in de looprichting,
-  knipperende ogen, terugdeinzen bij een treffer, vrolijke "pop" bij een knock-out (geen geweld/bloed).
-- **Skins:** vrij te spelen via XP (zie `src/style/skins.js`).
-
-## 5. Wapens & effecten
-
-| Wapen | Projectiel | Impact |
-|---|---|---|
-| **Bubbelblaster** | Snelle cyaan bolletjes met korte staart | Kleine spetter |
-| **Stuiterkanon** | Oranje ballen die stuiteren | Ring-explosie + confetti |
-| **Konfettiraket** | Roze raket met rookspoor | Grote ronde knal, confetti, camerashake |
-
-**Special — Sprongstoot:** paarse schokgolfring + opwaartse lancering. Altijd zichtbaar voor iedereen in de buurt.
-
-**Treffer-feedback:** witte flits op het personage, wegspringende schadecijfers, hitmarker in het vizier,
-korte squash van het getroffen personage. Kritieke treffers (hoofd) krijgen gele cijfers.
-
-**Overzicht bewaren:** max. ~300 deeltjes tegelijk, effecten < 0,6 s, geen schermvullende flitsen.
-
-## 6. Belichting
-
-- Eén zonlicht (directional) met zachte schaduwen (PCF soft), plus een hemel/aarde-licht voor zachte vulling.
-- Toon-shading met 3 tinten: licht, midden, schaduw.
-- Lichte mist richting de horizonkleur geeft diepte zonder zware post-processing.
-- Geen bloom, geen SSAO, geen realtime reflecties.
-
-## 7. Interface
-
-- **Typografie:** *Baloo 2* (koppen, speels maar strak) + *Inter* (tekst, cijfers).
-- **Vormtaal:** afgeronde panelen (16–24 px radius), witte kaarten met lichte schaduw, gekleurde accentranden.
-- **Beweging:** 150–300 ms ease-out overgangen, knoppen veren licht bij hover.
-- **Ranglijst:** podiumkleuren goud/zilver/brons, eigen rij gemarkeerd, duidelijke cijfers in tabular numerals.
-- **Premium, niet kinderachtig:** beperkt aantal kleuren per scherm, veel witruimte, geen cartoonlettertypes in lopende tekst.
+Kort en stoer: *ELIMINATIE*, *TRIPLE ELIMINATIE*, *Kampioen van de arena*, *2 op rij*, *Dominant*.
+Titels per level: Rookie → Challenger → Contender → Elite → Champion → Legend.
 
 ## 8. Prestaties
 
 | Instelling | Laag | Midden | Hoog |
 |---|---|---|---|
-| Render-resolutie | 0,75× | 1× | tot 2× (DPR) |
+| Render-resolutie | 0,75× | 1× | tot 2× |
 | Schaduwen | uit | 1024² | 2048² |
-| Antialiasing | uit | aan | aan |
 | Max. deeltjes | 120 | 250 | 400 |
-| Decor-dichtheid | 50% | 100% | 100% |
 
-- Low-poly geometrie (personage ≈ 1.5k driehoeken), gedeelde materialen, instancing voor gras/decor.
-- Automatische kwaliteitsverlaging als de framerate langer dan enkele seconden onder 45 fps zakt.
+Personages bestaan uit ~2k driehoeken. De automatische kwaliteit schakelt terug bij aanhoudend < 45 fps en start op *Laag* op Chromebooks en zwakke toestellen.

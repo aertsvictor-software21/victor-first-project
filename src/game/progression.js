@@ -9,7 +9,7 @@ export function levelInfo(xp) {
   return { level, into: rest, need, progress: rest / need };
 }
 
-const TITLES = [[1, 'Nieuwkomer'], [3, 'Knaller'], [6, 'Stuiterexpert'], [10, 'Arenaheld'], [15, 'Konfettikoning'], [20, 'Legende']];
+const TITLES = [[1, 'Rookie'], [3, 'Challenger'], [6, 'Contender'], [10, 'Elite'], [15, 'Champion'], [20, 'Legend']];
 export function titleFor(level) {
   let t = TITLES[0][1];
   for (const [l, name] of TITLES) if (level >= l) t = name;
@@ -19,12 +19,12 @@ export function titleFor(level) {
 // ---------- Dagelijkse uitdagingen ----------
 // stat: sleutel uit de matchstatistieken; mode 'sum' telt op over matches, 'max' = in één match.
 const POOL = [
-  { id: 'ko10', text: "Maak 10 KO's", stat: 'kills', target: 10, xp: 120 },
-  { id: 'ko20', text: "Maak 20 KO's", stat: 'kills', target: 20, xp: 200 },
-  { id: 'blast6', text: "6 KO's met de Bubbelblaster", stat: 'ko_blaster', target: 6, xp: 130 },
-  { id: 'bounce5', text: "5 KO's met het Stuiterkanon", stat: 'ko_bouncer', target: 5, xp: 140 },
-  { id: 'rocket5', text: "5 KO's met de Konfettiraket", stat: 'ko_rocket', target: 5, xp: 140 },
-  { id: 'special2', text: "2 KO's met de Sprongstoot", stat: 'ko_special', target: 2, xp: 150 },
+  { id: 'ko10', text: "Maak 10 eliminaties", stat: 'kills', target: 10, xp: 120 },
+  { id: 'ko20', text: "Maak 20 eliminaties", stat: 'kills', target: 20, xp: 200 },
+  { id: 'blast6', text: "6 eliminaties met het Pulsgeweer", stat: 'ko_blaster', target: 6, xp: 130 },
+  { id: 'bounce5', text: "5 eliminaties met de Stuiterwerper", stat: 'ko_bouncer', target: 5, xp: 140 },
+  { id: 'rocket5', text: "5 eliminaties met de Raketwerper", stat: 'ko_rocket', target: 5, xp: 140 },
+  { id: 'special2', text: "2 eliminaties met de Sprongstoot", stat: 'ko_special', target: 2, xp: 150 },
   { id: 'head15', text: 'Raak 15 headshots', stat: 'headshots', target: 15, xp: 130 },
   { id: 'ringout3', text: '3 tegenstanders uit de arena geblazen', stat: 'ringOuts', target: 3, xp: 150 },
   { id: 'heal4', text: 'Pak 4 health-orbs', stat: 'pickups', target: 4, xp: 90 },
@@ -32,8 +32,8 @@ const POOL = [
   { id: 'top3x2', text: 'Eindig 2× in de top 3', stat: 'top3', target: 2, xp: 150 },
   { id: 'win1', text: 'Win een match', stat: 'wins', target: 1, xp: 180 },
   { id: 'play3', text: 'Speel 3 matches', stat: 'matches', target: 3, xp: 100 },
-  { id: 'streak4', text: 'Haal een reeks van 4 KO\'s', stat: 'maxStreak', target: 4, xp: 160, mode: 'max' },
-  { id: 'multi2', text: 'Maak een Dubbel-KO', stat: 'bestMulti', target: 2, xp: 140, mode: 'max' },
+  { id: 'streak4', text: 'Haal een reeks van 4 eliminaties', stat: 'maxStreak', target: 4, xp: 160, mode: 'max' },
+  { id: 'multi2', text: 'Maak een dubbele eliminatie', stat: 'bestMulti', target: 2, xp: 140, mode: 'max' },
   { id: 'revenge2', text: 'Neem 2× wraak', stat: 'revenge', target: 2, xp: 110 },
 ];
 
@@ -95,11 +95,11 @@ export function applyChallenges(progress, values) {
 
 // ---------- Prestaties ----------
 export const ACHIEVEMENTS = [
-  { id: 'first_ko', name: 'Eerste knal', text: 'Maak je eerste KO', icon: '✦', check: (p, m) => m.kills >= 1 },
+  { id: 'first_ko', name: 'Eerste knal', text: 'Maak je eerste eliminatie', icon: '✦', check: (p, m) => m.kills >= 1 },
   { id: 'first_win', name: 'Kampioen', text: 'Win een match', icon: '🏆', check: (p, m, place) => place === 1 },
-  { id: 'ten_match', name: 'Op dreef', text: "10 KO's in één match", icon: '🔥', check: (p, m) => m.kills >= 10 },
-  { id: 'streak5', name: 'Niet te stoppen', text: "Reeks van 5 KO's", icon: '⚡', check: (p, m) => m.maxStreak >= 5 },
-  { id: 'triple', name: 'Driedubbel', text: 'Maak een Driedubbel-KO', icon: '✸', check: (p, m) => m.bestMulti >= 3 },
+  { id: 'ten_match', name: 'Op dreef', text: "10 eliminaties in één match", icon: '🔥', check: (p, m) => m.kills >= 10 },
+  { id: 'streak5', name: 'Niet te stoppen', text: "Reeks van 5 eliminaties", icon: '⚡', check: (p, m) => m.maxStreak >= 5 },
+  { id: 'triple', name: 'Driedubbel', text: 'Maak een triple eliminatie', icon: '✸', check: (p, m) => m.bestMulti >= 3 },
   { id: 'ringout', name: 'Wegblazer', text: '25 tegenstanders uit de arena', icon: '💨', check: (p) => p.lifetime.ringOuts >= 25 },
   { id: 'sharp', name: 'Scherpschutter', text: '100 headshots in totaal', icon: '◎', check: (p) => p.lifetime.headshots >= 100 },
   { id: 'veteran', name: 'Veteraan', text: 'Speel 25 matches', icon: '★', check: (p) => p.matches >= 25 },
