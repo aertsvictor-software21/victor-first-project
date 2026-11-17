@@ -13,6 +13,16 @@ npm run dev      # ontwikkelserver op http://localhost:5173
 npm run build    # productie-build in dist/
 ```
 
+## Online zetten (speelbaar in elke browser)
+
+ARENA is een statische webapp: geen installatie, geen plug-ins, werkt in Chrome, Edge, Firefox en Safari en op Chromebooks.
+
+- **GitHub Pages (gratis):** merge naar `main` en zet eenmalig *Settings → Pages → Source: GitHub Actions* aan.
+  De workflow in `.github/workflows/pages.yml` bouwt en publiceert dan automatisch.
+- **Andere host (itch.io, Netlify, schoolserver):** `npm run build` en upload de map `dist/`. Dankzij relatieve paden werkt het ook vanuit een submap.
+
+Op zwakkere toestellen (Chromebooks, ≤ 4 cores of ≤ 4 GB geheugen) start de automatische kwaliteit op *Laag*.
+
 ## Besturing
 
 | Toets | Actie |
@@ -41,6 +51,17 @@ npm run build    # productie-build in dist/
 - **Licht voor laptops** — toon-shading zonder post-processing, instancing, samengevoegde statische geometrie,
   gepoolde projectielen en deeltjes, kwaliteitsniveaus Laag/Midden/Hoog en automatische terugschakeling bij lage FPS.
 
+## Waarom je terugkomt
+
+- **Korte matches**: *Flitsmatch* (90 s, 10 KO's) of *Standaard* (3 min, 15 KO's). Met `Enter` start je meteen opnieuw.
+- **Directe beloning**: XP-popups per KO, Dubbel-/Driedubbel-KO's, reeksen, *Wraak!* op wie jou uitschakelde, ring-outs.
+- **Dagelijkse uitdagingen**: elke dag dezelfde 3 voor iedereen, zodat je kunt vergelijken met vrienden. Je ziet live wanneer je er een haalt.
+- **Levels en titels**, 12 **prestaties**, personages die je met XP vrijspeelt, ranglijstpunten en divisies.
+- **Auto-moeilijkheid**: bots worden sterker naarmate jij beter wordt.
+
+De progressie is bewust eerlijk opgezet: geen loot boxes, geen betalingen, geen streaks die je kwijtraakt
+als je een dag niet speelt, en na 40 minuten spelen een vriendelijke pauzetip.
+
 ## Structuur
 
 ```
@@ -49,7 +70,7 @@ src/
   style/               kleurenpalet, toon-materialen, skins
   world/               arena-definities + lichte collisiewereld
   entities/            gestileerd personage + animaties
-  game/                match, bots, wapens/projectielen, effecten, input, audio, opslag
+  game/                match, bots, wapens/projectielen, effecten, input, audio, opslag, progressie
   ui/                  HUD + stylesheet
 docs/ART_DIRECTION.md  visuele stijlgids
 ```

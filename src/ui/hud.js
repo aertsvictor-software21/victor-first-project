@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { WEAPONS, WEAPON_ORDER, SPECIAL, DASH } from '../game/weapons.js';
-import { MATCH_RULES } from '../game/match.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const hex = (n) => '#' + n.toString(16).padStart(6, '0');
@@ -18,13 +17,15 @@ export class Hud {
         <div class="killfeed" id="killfeed"></div>
         <div class="timer-card">
           <div class="timer" id="timer">3:00</div>
-          <div class="goal">Eerste tot <b>${MATCH_RULES.scoreLimit}</b> KO's</div>
+          <div class="goal" id="goal"></div>
         </div>
         <div class="mini-board" id="miniBoard"></div>
       </div>
       <div class="crosshair" id="crosshair"><i></i><i></i><i></i><i></i><span class="dot"></span>
         <div class="hitmarker" id="hitmarker"><i></i><i></i><i></i><i></i></div></div>
       <div class="ko-banner" id="koBanner"></div>
+      <div class="xp-pops" id="xpPops"></div>
+      <div class="toasts" id="toasts"></div>
       <div class="down-card" id="downCard"></div>
       <div class="hurt" id="hurt"></div>
       <div class="hurt-dir" id="hurtDir"></div>
@@ -65,7 +66,7 @@ export class Hud {
       weapons: $('#weapons', root), dash: $('#abDash', root), special: $('#abSpecial', root),
       cross: $('#crosshair', root), hitmarker: $('#hitmarker', root), ko: $('#koBanner', root), down: $('#downCard', root),
       hurt: $('#hurt', root), hurtDir: $('#hurtDir', root), board: $('#scoreboard', root), tags: $('#tags', root), nums: $('#nums', root),
-      fps: $('#fps', root), pause: $('#pause', root),
+      fps: $('#fps', root), pause: $('#pause', root), goal: $('#goal', root), pops: $('#xpPops', root), toasts: $('#toasts', root),
     };
     this.ghostHp = 100;
     this.hurtV = 0;
@@ -79,6 +80,8 @@ export class Hud {
     this.tags.clear();
     const p = match.player;
     this.el.pname.textContent = p.name;
+    this.el.goal.innerHTML = `Eerste tot <b>${match.rules.scoreLimit}</b> KO's`;
+    this.el.pops.innerHTML = '';
     this.el.portrait.style.background = `radial-gradient(circle at 35% 30%, #fff8 0 18%, transparent 19%), ${hex(p.skin.body)}`;
     this.el.portrait.style.borderColor = hex(p.skin.accent);
     for (const f of match.fighters) {
@@ -229,11 +232,32 @@ export class Hud {
     this.el.hpFill.classList.remove('heal'); void this.el.hpFill.offsetWidth; this.el.hpFill.classList.add('heal');
   }
 
-  koBanner(victim, streak) {
-    const labels = { 2: 'Dubbel!', 3: 'Driedubbel!', 4: 'Niet te stoppen!', 5: 'Legendarisch!' };
+  koBanner(victim, streak, multi = 1) {
+    const labels = { 2: 'Reeks van 2', 3: 'Op dreef!', 4: 'Niet te stoppen!', 5: 'Legendarisch!' };
+    const titles = { 2: 'DUBBEL!', 3: 'DRIEDUBBEL!', 4: 'VIERVOUDIG!' };
     const k = this.el.ko;
-    k.innerHTML = `<div class="ko-title">KO!</div><div class="ko-sub">Je raakte <b style="color:${hex(victim.skin.body)}">${victim.name}</b>${streak > 1 ? ` · <span class="streak">${labels[Math.min(streak, 5)]}</span>` : ''}</div>`;
+    k.innerHTML = `<div class="ko-title ${multi > 1 ? 'multi' : ''}">${titles[Math.min(multi, 4)] || 'KO!'}</div><div class="ko-sub">Je raakte <b style="color:${hex(victim.skin.body)}">${victim.name}</b>${streak > 1 ? ` · <span class="streak">${labels[Math.min(streak, 5)]}</span>` : ''}</div>`;
     k.classList.remove('show'); void k.offsetWidth; k.classList.add('show');
+  }
+
+  // "+15 XP"-popjes rechts van het vizier
+  xpPop(label, xp) {
+    const el = document.createElement('div');
+    el.className = 'xp-pop';
+    el.innerHTML = `<b>+${xp}</b> ${label}`;
+    this.el.pops.appendChild(el);
+    setTimeout(() => el.remove(), 1600);
+    while (this.el.pops.children.length > 5) this.el.pops.firstChild.remove();
+  }
+
+  // Toast voor voltooide uitdagingen / prestaties tijdens de match
+  toast(title, text, kind = 'challenge') {
+    const el = document.createElement('div');
+    el.className = 'toast ' + kind;
+    el.innerHTML = `<div class="toast-icon">${kind === 'challenge' ? '✔' : '★'}</div><div><b>${title}</b><span>${text}</span></div>`;
+    this.el.toasts.appendChild(el);
+    setTimeout(() => el.classList.add('out'), 3200);
+    setTimeout(() => el.remove(), 3700);
   }
 
   playerDown(killer, t) {

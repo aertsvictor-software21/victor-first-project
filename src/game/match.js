@@ -68,7 +68,7 @@ export class Fighter {
 // Match
 // ------------------------------------------------------------------
 export class Match {
-  constructor({ scene, arena, camera, hud, settings, playerProfile, bots, difficulty, audio }) {
+  constructor({ scene, arena, camera, hud, settings, playerProfile, bots, difficulty, audio, mode = {} }) {
     this.scene = scene;
     this.arena = arena;
     this.world = arena.world;
@@ -77,8 +77,12 @@ export class Match {
     this.settings = settings;
     this.audio = audio;
     this.time = 0;
-    this.remaining = MATCH_RULES.duration;
+    this.rules = { ...MATCH_RULES, ...mode };
+    this.remaining = this.rules.duration;
     this.over = false;
+    // spelersstatistieken voor uitdagingen, prestaties en XP
+    this.stats = { kills: 0, killsBy: { blaster: 0, bouncer: 0, rocket: 0, special: 0 }, headshots: 0, ringOuts: 0, maxStreak: 0, pickups: 0, damage: 0, bestMulti: 0, revenge: 0 };
+    this.multi = 0; this.lastKoT = -99; this.nemesis = null;
     this.shake = 0;
     this.camYaw = 0; this.camPitch = 0.15;
     this.camPos = new THREE.Vector3();
@@ -177,7 +181,7 @@ export class Match {
 
     if (!this.over) {
       const leader = this.standings()[0];
-      if (this.remaining <= 0 || leader.kills >= MATCH_RULES.scoreLimit) this.finish();
+      if (this.remaining <= 0 || leader.kills >= this.rules.scoreLimit) this.finish();
     }
   }
 
@@ -423,7 +427,7 @@ export class Match {
     this.audio?.play('boom', { pos });
   }
 
-  damage(target, amount, attacker, { head = false, dir = null, knock = 0, up = 1, self = false } = {}) {
+  damage(target, amount, attacker, { head = false, dir = null, knock = 0, up = 1, self = false, weapon = null, special = false } = {}) {
     if (!target.alive || target.invuln > 0 || this.over) return;
     amount = Math.round(amount);
     if (dir && knock) {
@@ -438,6 +442,8 @@ export class Match {
       target.lastAttacker = attacker;
       target.lastAttackT = this.time;
       attacker.damageDealt += amount;
+      target.lastHitWeapon = special ? 'special' : weapon?.id || 'blaster';
+      if (attacker.isPlayer) { this.stats.damage += amount; if (head) this.stats.headshots++; }
     }
     const hitPos = target.pos.clone(); hitPos.y += head ? 2.1 : 1.6;
     if (attacker?.isPlayer && !self) {
@@ -469,10 +475,34 @@ export class Match {
     if (killer && killer !== f) {
       killer.kills++;
       killer.streak++;
-      if (killer.isPlayer) { this.hud.koBanner(f, killer.streak); this.audio?.play('ko'); }
+      if (killer.isPlayer) this.playerKo(f, cause);
     }
     this.hud.killFeed(killer && killer !== f ? killer : null, f, cause);
-    if (f.isPlayer) this.hud.playerDown(killer && killer !== f ? killer : null, MATCH_RULES.respawn);
+    if (f.isPlayer) {
+      this.nemesis = killer && killer !== f ? killer : this.nemesis;
+      this.hud.playerDown(killer && killer !== f ? killer : null, MATCH_RULES.respawn);
+    }
+  }
+
+  // Directe beloning per KO: XP-popups, multi-KO's, wraak en streaks
+  playerKo(victim, cause) {
+    const st = this.stats, p = this.player;
+    st.kills++;
+    st.killsBy[victim.lastHitWeapon || 'blaster']++;
+    st.maxStreak = Math.max(st.maxStreak, p.streak);
+    this.multi = this.time - this.lastKoT < 4 ? this.multi + 1 : 1;
+    this.lastKoT = this.time;
+    st.bestMulti = Math.max(st.bestMulti, this.multi);
+    const pops = [['KO', 15]];
+    if (cause === 'fall') { st.ringOuts++; pops.push(['Uit de arena!', 10]); }
+    if (victim.lastHitWeapon === 'special') pops.push(['Sprongstoot-KO', 10]);
+    if (this.multi >= 2) pops.push([['', '', 'Dubbel-KO', 'Driedubbel-KO', 'Viervoudig-KO'][Math.min(this.multi, 4)] || 'Multi-KO', 10 * this.multi]);
+    if (victim === this.nemesis) { st.revenge++; pops.push(['Wraak!', 10]); this.nemesis = null; }
+    if (p.streak === 3 || p.streak === 5 || p.streak === 8) pops.push([`Reeks van ${p.streak}`, 5 * p.streak]);
+    pops.forEach(([label, xp], i) => setTimeout(() => this.hud.xpPop(label, xp), i * 180));
+    this.bonusXp = (this.bonusXp || 0) + pops.slice(1).reduce((a, [, xp]) => a + xp, 0);
+    this.hud.koBanner(victim, p.streak, this.multi);
+    this.audio?.play('ko');
   }
 
   updatePickups(dt) {
@@ -494,7 +524,7 @@ export class Match {
           p.orb.visible = p.cross.visible = false;
           this.effects.burst(p.pos.clone().setY(p.pos.y + 1), 16, { speed: 3, colors: FX_COLORS.heal, up: 5, life: 0.7, grav: -2 });
           this.effects.ring(p.pos.clone().setY(p.pos.y + 0.15), { color: 0x2ee6a8, size: 2.2, life: 0.4 });
-          if (f.isPlayer) { this.hud.healed(); this.audio?.play('heal'); }
+          if (f.isPlayer) { this.stats.pickups++; this.hud.healed(); this.audio?.play('heal'); }
           break;
         }
       }

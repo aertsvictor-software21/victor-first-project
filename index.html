@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/src/ui/styles.css" />
+  <link rel="stylesheet" href="./src/ui/styles.css" />
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -28,18 +28,20 @@
     </nav>
 
     <section class="panel" id="panel-play">
+      <div class="daily" id="daily"></div>
       <h2>Kies je arena</h2>
       <div class="arena-cards" id="arenaCards"></div>
       <div class="mode-row">
         <div class="mode">
-          <div class="mode-title">Vrij-voor-allen</div>
-          <div class="mode-meta">6 spelers · 3 minuten · eerste tot 15 KO's</div>
+          <div class="mode-title" id="modeTitle">Vrij-voor-allen</div>
+          <div class="mode-meta" id="modeMeta"></div>
         </div>
         <div class="segmented" id="difficulty"></div>
       </div>
+      <div class="segmented mode-switch" id="modeSeg"></div>
       <label class="field"><span>Spelersnaam</span><input id="nameInput" maxlength="14" autocomplete="off" /></label>
       <button class="btn primary big" id="startBtn">Start match <span class="arrow">→</span></button>
-      <p class="hint">Klik in het spel om de muis vast te zetten · <kbd>Esc</kbd> pauzeert</p>
+      <p class="hint"><kbd>Enter</kbd> start direct · klik in het spel om de muis vast te zetten · <kbd>Esc</kbd> pauzeert</p>
     </section>
 
     <section class="panel" id="panel-skins">
@@ -54,6 +56,7 @@
       <p class="sub" id="rankLine"></p>
       <div class="board-list" id="seasonBoard"></div>
       <div class="stats" id="stats"></div>
+      <div class="ach-grid" id="achGrid"></div>
     </section>
 
     <section class="panel" id="panel-settings">
@@ -102,10 +105,11 @@
         <button class="btn primary big" id="againBtn">Nog een match</button>
         <button class="btn ghost big" id="menuBtn">Naar menu</button>
       </div>
+      <p class="kbd-hint"><kbd>Enter</kbd> = nog een match</p>
     </div>
   </div>
 
   <div id="fade"></div>
-  <script type="module" src="/src/main.js"></script>
+  <script type="module" src="./src/main.js"></script>
 </body>
 </html>

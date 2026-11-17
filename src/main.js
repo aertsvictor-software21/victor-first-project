@@ -8,6 +8,14 @@ import { Hud } from './ui/hud.js';
 import { Audio } from './game/audio.js';
 import { DIFFICULTY } from './game/bot.js';
 import { load, save, seasonBoard, rank } from './game/storage.js';
+import { levelInfo, titleFor, dailyChallenges, challengeDef, matchStatValues, applyChallenges, ACHIEVEMENTS } from './game/progression.js';
+
+// Speelmodi: korte matches houden de "nog één potje"-drempel laag (ideaal voor een pauze).
+const MODES = {
+  flits: { label: 'Flitsmatch', duration: 90, scoreLimit: 10, meta: '6 spelers · 90 seconden · eerste tot 10 KO\'s' },
+  standaard: { label: 'Standaard', duration: 180, scoreLimit: 15, meta: '6 spelers · 3 minuten · eerste tot 15 KO\'s' },
+};
+const BREAK_AFTER = 40 * 60; // seconden speeltijd voor een pauzetip
 
 const $ = (s) => document.querySelector(s);
 const hex = (n) => '#' + n.toString(16).padStart(6, '0');
@@ -16,12 +24,16 @@ const hex = (n) => '#' + n.toString(16).padStart(6, '0');
 // Status & instellingen
 // ------------------------------------------------------------------
 const state = load();
+state.daily = dailyChallenges(state.daily);
+let sessionPlay = 0;
 const QUALITY = {
   low:    { label: 'Laag',   pixelRatio: 0.75, shadows: false, shadowMap: 0,    particles: 120 },
   medium: { label: 'Midden', pixelRatio: 1,    shadows: true,  shadowMap: 1024, particles: 250 },
   high:   { label: 'Hoog',   pixelRatio: 2,    shadows: true,  shadowMap: 2048, particles: 400 },
 };
-let activeQuality = state.settings.quality === 'auto' ? 'medium' : state.settings.quality;
+const weakDevice = /CrOS/.test(navigator.userAgent) || (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
+const autoStart = weakDevice ? 'low' : 'medium';
+let activeQuality = state.settings.quality === 'auto' ? autoStart : state.settings.quality;
 
 // ------------------------------------------------------------------
 // Renderer, scène, licht
@@ -155,8 +167,18 @@ function fadeThen(fn) {
 }
 
 function renderProfile() {
-  const p = state.profile, r = rank(p.rating);
-  $('#profileChip').innerHTML = `<div class="avatar" style="background:${hex(getSkin(p.skin).body)}"></div><div>${p.name}<small>${p.rating} punten · ${p.xp} XP</small></div><span class="rank-badge" style="background:${r.color}">${r.name}</span>`;
+  const p = state.profile, r = rank(p.rating), L = levelInfo(p.xp);
+  $('#profileChip').innerHTML = `<div class="avatar" style="background:${hex(getSkin(p.skin).body)}"></div><div>${p.name} <span class="level-pill">Lv ${L.level}</span><small>${titleFor(L.level)} · ${p.rating} punten</small></div><span class="rank-badge" style="background:${r.color}">${r.name}</span>`;
+}
+
+function renderDaily() {
+  state.daily = dailyChallenges(state.daily);
+  const done = state.daily.items.filter((i) => i.done).length;
+  $('#daily').innerHTML = `<div class="daily-head"><b>Uitdagingen van vandaag</b><small>${done}/3 voltooid · nieuwe morgen</small></div>` +
+    state.daily.items.map((it) => {
+      const d = challengeDef(it.id);
+      return `<div class="chal ${it.done ? 'done' : ''}"><span>${it.done ? '✔ ' : ''}${d.text}</span><em>+${d.xp} XP</em><div class="bar"><i style="width:${(it.value / d.target) * 100}%"></i></div></div>`;
+    }).join('');
 }
 
 function renderArenaCards() {
@@ -204,6 +226,7 @@ function renderSkins() {
 
 function renderBoard() {
   const p = state.profile, r = rank(p.rating);
+  $('#achGrid').innerHTML = ACHIEVEMENTS.map((a) => `<div class="ach ${p.achievements.includes(a.id) ? 'got' : ''}" title="${a.text}"><span class="i">${a.icon}</span><b>${a.name}</b>${a.text}</div>`).join('');
   const rows = seasonBoard(p);
   const you = rows.find((x) => x.you);
   $('#rankLine').innerHTML = `Je staat op plek <b>#${you.rank}</b> · divisie <b style="color:${r.color}">${r.name}</b>`;
@@ -219,7 +242,7 @@ function renderSettings() {
   const s = state.settings;
   segmented($('#qualitySeg'), [['auto', 'Auto'], ['low', 'Laag'], ['medium', 'Midden'], ['high', 'Hoog']], s.quality, (v) => {
     s.quality = v; persist();
-    applyQuality(v === 'auto' ? 'medium' : v);
+    applyQuality(v === 'auto' ? autoStart : v);
   });
   $('#sens').value = s.sensitivity; $('#sensVal').textContent = s.sensitivity.toFixed(2) + '×';
   $('#sens').oninput = (e) => { s.sensitivity = +e.target.value; $('#sensVal').textContent = s.sensitivity.toFixed(2) + '×'; persist(); };
@@ -232,13 +255,25 @@ function renderSettings() {
 function setTab(tab) {
   for (const b of $('#menuNav').children) b.classList.toggle('active', b.dataset.tab === tab);
   for (const p of document.querySelectorAll('.panel')) p.classList.toggle('show', p.id === 'panel-' + tab);
+  if (tab === 'play') renderDaily();
   if (tab === 'skins') renderSkins();
   if (tab === 'board') renderBoard();
   if (tab === 'settings') renderSettings();
 }
 for (const b of $('#menuNav').children) b.onclick = () => { audio.ensure(); audio.play('click'); setTab(b.dataset.tab); };
 
-segmented($('#difficulty'), Object.entries(DIFFICULTY).map(([k, v]) => [k, v.label]), state.settings.difficulty, (v) => { state.settings.difficulty = v; persist(); });
+segmented($('#difficulty'), [['auto', 'Auto'], ...Object.entries(DIFFICULTY).map(([k, v]) => [k, v.label])], state.settings.difficulty, (v) => { state.settings.difficulty = v; persist(); });
+const renderMode = () => { $('#modeMeta').textContent = MODES[state.settings.mode]?.meta || ''; $('#modeTitle').textContent = 'Vrij-voor-allen · ' + MODES[state.settings.mode].label; };
+if (!MODES[state.settings.mode]) state.settings.mode = 'standaard';
+segmented($('#modeSeg'), Object.entries(MODES).map(([k, v]) => [k, v.label]), state.settings.mode, (v) => { state.settings.mode = v; persist(); renderMode(); });
+renderMode();
+// "Auto" past de bots aan je niveau aan: altijd uitdagend, nooit hopeloos.
+const resolveDifficulty = () => {
+  const d = state.settings.difficulty;
+  if (d !== 'auto') return d;
+  const r = state.profile.rating;
+  return r < 1060 ? 'easy' : r < 1220 ? 'normal' : 'hard';
+};
 $('#nameInput').value = state.profile.name;
 $('#nameInput').oninput = (e) => { state.profile.name = e.target.value.trim().slice(0, 14) || 'Speler'; persist(); renderProfile(); };
 
@@ -247,9 +282,13 @@ $('#nameInput').oninput = (e) => { state.profile.name = e.target.value.trim().sl
 // ------------------------------------------------------------------
 const BOT_NAMES = ['Zefier', 'Pompom', 'Tikkie', 'Noor', 'Bliksem', 'Lotte', 'Rakker', 'Juno', 'Fizz', 'Moos', 'Saffier', 'Wiebel'];
 
+let starting = false;
 function startMatch() {
+  if (starting) return;
+  starting = true;
   audio.ensure();
   fadeThen(() => {
+    starting = false;
     if (match) { match.dispose(); match = null; }
     if (arena.def.id !== state.settings.arena) loadArena(state.settings.arena);
     if (preview) preview.root.visible = false;
@@ -260,8 +299,9 @@ function startMatch() {
       scene, arena, camera, hud,
       settings: { ...state.settings, maxParticles: QUALITY[activeQuality].particles },
       playerProfile: { name: state.profile.name, skin: getSkin(state.profile.skin) },
-      bots, difficulty: state.settings.difficulty, audio,
+      bots, difficulty: resolveDifficulty(), audio, mode: MODES[state.settings.mode],
     });
+    liveToasted = new Set();
     match.onFinish = (st) => setTimeout(() => showResults(st), 1600);
     hud.bind(match);
     hud.setVisible(true);
@@ -284,6 +324,11 @@ $('#quitBtn').onclick = () => toMenu();
 $('#startBtn').onclick = startMatch;
 $('#againBtn').onclick = startMatch;
 $('#menuBtn').onclick = () => toMenu();
+// Enter = direct (opnieuw) spelen
+addEventListener('keydown', (e) => {
+  if (e.code !== 'Enter' || e.target.tagName === 'INPUT') return;
+  if ($('#results').classList.contains('show') || ($('#menu').classList.contains('show') && !match)) startMatch();
+});
 
 function toMenu() {
   fadeThen(() => {
@@ -300,6 +345,20 @@ function toMenu() {
   });
 }
 
+// Uitdagingen live volgen: direct een toast zodra je er één haalt.
+let liveToasted = new Set();
+function checkLiveChallenges() {
+  if (!match || match.over) return;
+  const v = matchStatValues(match.stats, 99);
+  for (const it of state.daily.items) {
+    if (it.done || liveToasted.has(it.id)) continue;
+    const d = challengeDef(it.id);
+    if (['matches', 'top3', 'wins'].includes(d.stat)) continue;
+    const now = d.mode === 'max' ? Math.max(it.value, v[d.stat] || 0) : it.value + (v[d.stat] || 0);
+    if (now >= d.target) { liveToasted.add(it.id); hud.toast('Uitdaging voltooid!', `${d.text} · +${d.xp} XP`); audio.play('heal'); }
+  }
+}
+
 function showResults(st) {
   if (!match) return;
   input.enabled = false;
@@ -308,30 +367,54 @@ function showResults(st) {
   const place = st.indexOf(p) + 1;
   const prof = state.profile;
   const ratingDelta = [32, 20, 10, 0, -8, -15][place - 1] + Math.min(10, p.kills);
-  const xpGain = 60 + p.kills * 15 + [80, 50, 30, 15, 5, 0][place - 1];
-  const prevXp = prof.xp;
+  const prevXp = prof.xp, prevLevel = levelInfo(prevXp).level;
+  const isRecord = p.kills > prof.bestKOs && prof.matches > 0;
+
+  // uitdagingen
+  const values = matchStatValues(match.stats, place);
+  const doneChallenges = applyChallenges(state.daily, values);
+  const challengeXp = doneChallenges.reduce((a, c) => a + c.xp, 0);
+  const baseXp = 60, koXp = p.kills * 15, placeXp = [80, 50, 30, 15, 5, 0][place - 1], bonusXp = match.bonusXp || 0;
+  const xpGain = baseXp + koXp + placeXp + bonusXp + challengeXp;
+
   prof.xp += xpGain;
   prof.rating = Math.max(0, prof.rating + ratingDelta);
   prof.matches++;
-  if (place === 1) prof.wins++;
+  if (place === 1) { prof.wins++; if (!prof.arenaWins.includes(arena.def.id)) prof.arenaWins.push(arena.def.id); }
   prof.totalKOs += p.kills;
   prof.bestKOs = Math.max(prof.bestKOs, p.kills);
+  prof.lifetime.ringOuts += match.stats.ringOuts;
+  prof.lifetime.headshots += match.stats.headshots;
   state.history.unshift({ arena: arena.def.id, place, kills: p.kills, deaths: p.deaths, at: Date.now() });
   state.history = state.history.slice(0, 20);
-  persist();
+
   const unlocked = SKINS.filter((s) => s.unlockXp > prevXp && s.unlockXp <= prof.xp);
+  const allSkins = SKINS.every((s) => s.unlockXp <= prof.xp);
+  const newAch = ACHIEVEMENTS.filter((a) => !prof.achievements.includes(a.id) && a.check(prof, match.stats, place, p.deaths, allSkins));
+  prof.achievements.push(...newAch.map((a) => a.id));
+  persist();
+
+  const L = levelInfo(prof.xp), leveled = L.level > prevLevel;
+  const nextSkin = SKINS.find((s) => s.unlockXp > prof.xp);
 
   $('#resPlace').textContent = `#${place}`;
-  $('#resTitle').textContent = place === 1 ? 'Winnaar! Niemand hield je tegen.' : place <= 3 ? 'Op het podium — sterk gespeeld!' : 'Goed gevochten — volgende keer hoger!';
+  $('#resTitle').innerHTML = (place === 1 ? 'Winnaar! Niemand hield je tegen.' : place <= 3 ? 'Op het podium — sterk gespeeld!' : 'Goed gevochten — volgende keer hoger!') + (isRecord ? '<span class="record">Nieuw record: ' + p.kills + " KO's</span>" : '');
   const order = [st[1], st[0], st[2]];
   $('#podium').innerHTML = order.map((f, i) => f ? `<div class="pod p${[2, 1, 3][i]}"><div class="who">${f.name}${f.isPlayer ? ' (jij)' : ''}</div><div class="ball" style="background:${hex(f.skin.body)}"></div><div class="block">${[2, 1, 3][i]}</div></div>` : '').join('');
   hud.renderBoard($('#resBoard'), st, true);
+  const row = (label, val, cls = 'up') => `<div class="reward"><span>${label}</span><b class="${cls}">${val}</b></div>`;
   $('#resRewards').innerHTML = `<h3>Beloningen</h3>
-    <div class="reward"><span>XP verdiend</span><b class="up">+${xpGain}</b></div>
-    <div class="reward"><span>Ranglijstpunten</span><b class="${ratingDelta >= 0 ? 'up' : 'down'}">${ratingDelta >= 0 ? '+' : ''}${ratingDelta}</b></div>
-    <div class="reward"><span>Nieuwe stand</span><b>${prof.rating}</b></div>
-    <div class="reward"><span>Divisie</span><b style="color:${rank(prof.rating).color}">${rank(prof.rating).name}</b></div>
-    ${unlocked.map((s) => `<div class="unlock">Nieuw personage vrijgespeeld: <span style="color:${hex(s.body)}">${s.name}</span>!</div>`).join('')}`;
+    <div class="lvl-row"><div class="lvl-badge ${leveled ? 'up' : ''}">${L.level}</div><div style="flex:1"><div class="lvl-bar"><i id="lvlFill"></i></div>
+      <div class="lvl-meta">${leveled ? `<b>Level omhoog!</b>${titleFor(L.level) !== titleFor(prevLevel) ? ` Nieuwe titel: ${titleFor(L.level)}` : ''}` : `Nog ${L.need - L.into} XP tot level ${L.level + 1}`}${nextSkin ? ` · ${nextSkin.unlockXp - prof.xp} XP tot ${nextSkin.name}` : ''}</div></div></div>
+    ${row('Match + plaats', '+' + (baseXp + placeXp))}
+    ${row("KO's", '+' + koXp)}
+    ${bonusXp ? row('Bonussen (multi, reeks, wraak…)', '+' + bonusXp) : ''}
+    ${doneChallenges.map((c) => row('✔ ' + c.text, '+' + c.xp)).join('')}
+    ${row('Ranglijstpunten', (ratingDelta >= 0 ? '+' : '') + ratingDelta + ` → ${prof.rating}`, ratingDelta >= 0 ? 'up' : 'down')}
+    ${unlocked.map((s) => `<div class="unlock">Nieuw personage vrijgespeeld: <span style="color:${hex(s.body)}">${s.name}</span>!</div>`).join('')}
+    ${newAch.map((a) => `<div class="unlock">${a.icon} Prestatie behaald: <b>${a.name}</b> — ${a.text}</div>`).join('')}
+    ${state.settings.breakReminder && sessionPlay >= BREAK_AFTER ? `<div class="pausehint">Je speelt al ${Math.round(sessionPlay / 60)} minuten. Tijd voor een korte pauze? Je voortgang blijft bewaard.</div>` : ''}`;
+  requestAnimationFrame(() => requestAnimationFrame(() => { const f = $('#lvlFill'); if (f) f.style.width = L.progress * 100 + '%'; }));
   show('#results');
   hud.setVisible(false);
   if (place === 1) audio.play('win');
@@ -341,7 +424,7 @@ function showResults(st) {
 // Hoofdlus + automatische kwaliteit
 // ------------------------------------------------------------------
 const clock = new THREE.Clock();
-let fpsAcc = 0, fpsFrames = 0, fps = 0, lowFpsTime = 0;
+let fpsAcc = 0, fpsFrames = 0, fps = 0, lowFpsTime = 0, liveCheckT = 0;
 
 function frame() {
   requestAnimationFrame(frame);
@@ -365,7 +448,12 @@ function frame() {
 
   arena.update(dt, t);
   if (match) {
-    if (!paused) match.update(dt, input);
+    if (!paused) {
+      match.update(dt, input);
+      if (!match.over) sessionPlay += dt;
+      liveCheckT -= dt;
+      if (liveCheckT <= 0) { liveCheckT = 0.5; checkLiveChallenges(); }
+    }
     hud.update(dt, input, state.settings.showFps ? fps : 0);
   } else {
     updateShowcase(dt, t);
