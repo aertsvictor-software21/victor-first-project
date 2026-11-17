@@ -180,6 +180,15 @@ export class Character {
       case 'fin':
         add(new THREE.ConeGeometry(0.22, 0.55, 3), accent, [0, 0.62, -0.1], [-0.4, 0, 0], [0.35, 1, 1.4]);
         break;
+      case 'crown': {
+        add(new THREE.CylinderGeometry(0.3, 0.34, 0.16, 10, 1, true), toon(0xffd23d), [0, 0.6, 0], [0, 0, 0], [1, 1, 1]);
+        for (let i = 0; i < 5; i++) {
+          const a = (i / 5) * Math.PI * 2;
+          add(new THREE.ConeGeometry(0.07, 0.2, 5), toon(0xffd23d), [Math.sin(a) * 0.3, 0.77, Math.cos(a) * 0.3], [0, 0, 0], [1, 1, 1], false);
+        }
+        add(new THREE.SphereGeometry(0.06, 8, 6), accent, [0, 0.62, 0.33], [0, 0, 0], [1, 1, 1], false);
+        break;
+      }
       case 'visor':
         add(new THREE.TorusGeometry(0.5, 0.07, 6, 20, Math.PI), accent, [0, 0.1, 0.05], [0, 0, 0], [1.05, 1, 1.1]);
         add(new THREE.BoxGeometry(0.62, 0.14, 0.08), toon(0xffffff), [0, 0.3, 0.5], [-0.2, 0, 0], [1, 1, 1]);

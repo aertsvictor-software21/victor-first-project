@@ -11,4 +11,7 @@ export const SKINS = [
   { id: 'munt',    name: 'Munt',    body: 0x2ee6a8, belly: 0xe6fff6, accent: 0xff5d73, accessory: 'visor',   unlockXp: 2000 },
 ];
 
-export const getSkin = (id) => SKINS.find((s) => s.id === id) || SKINS[0];
+// Exclusief personage: alleen te verdienen met een dagreeks van 7 dagen.
+export const STREAK_SKIN = { id: 'zonnestraal', name: 'Zonnestraal', body: 0xffb81f, belly: 0xfff6d6, accent: 0xff5d73, accessory: 'crown', streakDays: 7 };
+
+export const getSkin = (id) => SKINS.find((s) => s.id === id) || (id === STREAK_SKIN.id ? STREAK_SKIN : SKINS[0]);

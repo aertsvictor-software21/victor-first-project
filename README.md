@@ -59,8 +59,10 @@ Op zwakkere toestellen (Chromebooks, ≤ 4 cores of ≤ 4 GB geheugen) start de 
 - **Levels en titels**, 12 **prestaties**, personages die je met XP vrijspeelt, ranglijstpunten en divisies.
 - **Auto-moeilijkheid**: bots worden sterker naarmate jij beter wordt.
 
-De progressie is bewust eerlijk opgezet: geen loot boxes, geen betalingen, geen streaks die je kwijtraakt
-als je een dag niet speelt, en na 40 minuten spelen een vriendelijke pauzetip.
+- **Dagreeks + dagelijkse beloning**: elke dag dat je speelt claim je XP (dag 1 → 7: 50 tot 300 XP).
+  Op dag 7 verdien je het exclusieve personage **Zonnestraal**, daarna elke 7e dag een bonuskist.
+
+Geen loot boxes en geen betalingen: alles is te verdienen door te spelen.
 
 ## Structuur
 

@@ -339,7 +339,6 @@ tr.you td { background: rgba(61,139,255,.14); }
 .lvl-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--mint), var(--sky)); border-radius: 99px; transition: width 1.2s var(--ease) .3s; }
 .lvl-meta { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
 .record { display: inline-block; background: var(--coral); color: #fff; font-weight: 800; font-size: 12px; padding: 3px 10px; border-radius: 99px; margin-left: 8px; animation: placeIn .6s var(--spring) .8s backwards; }
-.pausehint { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: #e9f8ff; font-size: 13px; font-weight: 600; color: var(--ink-2); }
 .kbd-hint { text-align: center; color: var(--ink-2); font-size: 13px; margin-top: 10px; }
 .res-card.rewards { max-height: 420px; overflow: auto; }
 
@@ -352,3 +351,32 @@ tr.you td { background: rgba(61,139,255,.14); }
 #panel-play #startBtn { position: sticky; bottom: 0; margin-top: 4px; }
 #panel-play .hint { padding-bottom: 16px; background: linear-gradient(transparent, var(--glass) 30%); }
 .daily .chal { padding: 4px 0; }
+
+/* ---------- dagreeks ---------- */
+.streak-chip { font-family: var(--head); font-weight: 800; font-size: 15px; padding: 2px 10px; border-radius: 99px; background: linear-gradient(135deg, #ffd23d, #ff7a3d); color: var(--ink); }
+.profile-chip { cursor: pointer; }
+.daily-reward { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(79, 182, 255, .35); backdrop-filter: blur(6px); opacity: 0; pointer-events: none; transition: opacity .3s var(--ease); }
+.daily-reward.show { opacity: 1; pointer-events: auto; }
+.dr-card { background: var(--paper); border-radius: 28px; padding: 26px 30px 22px; box-shadow: var(--shadow); text-align: center; width: min(640px, 94vw); position: relative; animation: panelIn .45s var(--spring); }
+.dr-flame { font-size: 56px; line-height: 1; margin-top: -58px; filter: drop-shadow(0 6px 10px rgba(255, 122, 61, .45)); animation: flame 1.6s ease-in-out infinite; }
+@keyframes flame { 50% { transform: scale(1.1) rotate(-4deg); } }
+.dr-card h2 { margin: 8px 0 4px; font-size: 34px; }
+.dr-card .sub { margin: 0 0 18px; color: var(--ink-2); }
+.dr-grid { display: grid; grid-template-columns: repeat(6, 1fr) 1.4fr; gap: 8px; margin-bottom: 18px; }
+.dr-tile { background: var(--paper-2); border-radius: 14px; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--ink-3); position: relative; transition: transform .2s var(--spring); }
+.dr-tile span { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.dr-tile b { font-family: var(--head); font-size: 20px; color: var(--ink-2); line-height: 1; }
+.dr-tile em { font-style: normal; font-size: 11px; font-weight: 700; }
+.dr-tile small { font-size: 10px; font-weight: 700; color: var(--grape); }
+.dr-tile.big { background: linear-gradient(160deg, #fff3cf, #ffe0ef); }
+.dr-tile.got { background: #dffbef; color: #12b886; }
+.dr-tile.got b { color: #12b886; }
+.dr-tile.got::after { content: '✔'; position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; background: var(--mint); color: #fff; font-size: 11px; display: grid; place-items: center; font-weight: 800; }
+.dr-tile.today { background: var(--sun); color: var(--ink); transform: translateY(-4px) scale(1.06); box-shadow: 0 8px 18px rgba(242, 169, 0, .4); animation: pulse 1.4s infinite; }
+.dr-tile.today b { color: var(--ink); }
+.dr-best { margin-top: 12px; font-size: 13px; color: var(--ink-3); }
+.menu-toast { position: fixed; left: 50%; top: 24px; transform: translateX(-50%); z-index: 45; }
+.menu-toast.out { transform: translate(-50%, -12px); }
+.toast.menu-toast .toast-icon { background: linear-gradient(135deg, #ffd23d, #ff7a3d); }
+.skin.streak:not(.locked) { background: linear-gradient(160deg, #fff3cf, #fff); }
+@media (max-width: 720px) { .dr-grid { grid-template-columns: repeat(4, 1fr); } }

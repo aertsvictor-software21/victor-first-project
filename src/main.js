@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { ARENAS, getArena, buildArena } from './world/arenas.js';
-import { SKINS, getSkin } from './style/skins.js';
+import { SKINS, STREAK_SKIN, getSkin } from './style/skins.js';
 import { Character } from './entities/character.js';
 import { Match } from './game/match.js';
 import { Input } from './game/input.js';
@@ -8,14 +8,13 @@ import { Hud } from './ui/hud.js';
 import { Audio } from './game/audio.js';
 import { DIFFICULTY } from './game/bot.js';
 import { load, save, seasonBoard, rank } from './game/storage.js';
-import { levelInfo, titleFor, dailyChallenges, challengeDef, matchStatValues, applyChallenges, ACHIEVEMENTS } from './game/progression.js';
+import { levelInfo, titleFor, dailyChallenges, challengeDef, matchStatValues, applyChallenges, ACHIEVEMENTS, streakStatus, STREAK_REWARDS } from './game/progression.js';
 
 // Speelmodi: korte matches houden de "nog één potje"-drempel laag (ideaal voor een pauze).
 const MODES = {
   flits: { label: 'Flitsmatch', duration: 90, scoreLimit: 10, meta: '6 spelers · 90 seconden · eerste tot 10 KO\'s' },
   standaard: { label: 'Standaard', duration: 180, scoreLimit: 15, meta: '6 spelers · 3 minuten · eerste tot 15 KO\'s' },
 };
-const BREAK_AFTER = 40 * 60; // seconden speeltijd voor een pauzetip
 
 const $ = (s) => document.querySelector(s);
 const hex = (n) => '#' + n.toString(16).padStart(6, '0');
@@ -25,7 +24,6 @@ const hex = (n) => '#' + n.toString(16).padStart(6, '0');
 // ------------------------------------------------------------------
 const state = load();
 state.daily = dailyChallenges(state.daily);
-let sessionPlay = 0;
 const QUALITY = {
   low:    { label: 'Laag',   pixelRatio: 0.75, shadows: false, shadowMap: 0,    particles: 120 },
   medium: { label: 'Midden', pixelRatio: 1,    shadows: true,  shadowMap: 1024, particles: 250 },
@@ -168,7 +166,8 @@ function fadeThen(fn) {
 
 function renderProfile() {
   const p = state.profile, r = rank(p.rating), L = levelInfo(p.xp);
-  $('#profileChip').innerHTML = `<div class="avatar" style="background:${hex(getSkin(p.skin).body)}"></div><div>${p.name} <span class="level-pill">Lv ${L.level}</span><small>${titleFor(L.level)} · ${p.rating} punten</small></div><span class="rank-badge" style="background:${r.color}">${r.name}</span>`;
+  $('#profileChip').innerHTML = `<div class="avatar" style="background:${hex(getSkin(p.skin).body)}"></div><div>${p.name} <span class="level-pill">Lv ${L.level}</span><small>${titleFor(L.level)} · ${p.rating} punten</small></div><span class="streak-chip" title="Dagreeks">🔥 ${state.streak.count}</span><span class="rank-badge" style="background:${r.color}">${r.name}</span>`;
+  $('#profileChip').onclick = () => openDailyReward(true);
 }
 
 function renderDaily() {
@@ -215,7 +214,12 @@ function renderSkins() {
     return `<button class="skin ${s.id === state.profile.skin ? 'active' : ''} ${locked ? 'locked' : ''}" data-id="${s.id}" ${locked ? 'disabled' : ''}>
       ${locked ? `<span class="lock">${s.unlockXp} XP</span>` : ''}
       <div class="blob" style="background:${hex(s.body)}"></div><b>${s.name}</b></button>`;
-  }).join('');
+  }).join('') + (() => {
+    const s = STREAK_SKIN, locked = !state.profile.streakSkin;
+    return `<button class="skin streak ${s.id === state.profile.skin ? 'active' : ''} ${locked ? 'locked' : ''}" data-id="${s.id}" ${locked ? 'disabled' : ''}>
+      ${locked ? `<span class="lock">🔥 ${s.streakDays} dagen</span>` : ''}
+      <div class="blob" style="background:${hex(s.body)}"></div><b>${s.name}</b></button>`;
+  })();
   for (const b of $('#skinGrid').children) b.onclick = () => {
     audio.ensure(); audio.play('click');
     state.profile.skin = b.dataset.id; persist();
@@ -342,7 +346,68 @@ function toMenu() {
     renderProfile();
     setPreviewSkin(state.profile.skin);
     setTab('play');
+    openDailyReward();
   });
+}
+
+// ------------------------------------------------------------------
+// Dagreeks: elke dag een beloning, hoger naarmate je reeks langer is
+// ------------------------------------------------------------------
+function openDailyReward(force = false) {
+  const st = streakStatus(state.streak);
+  if (!st.claimable && !force) return;
+  const day = st.day;
+  const tiles = STREAK_REWARDS.map((xp, i) => {
+    const d = i + 1;
+    const cls = st.claimable ? (d < day ? 'got' : d === day ? 'today' : '') : (d <= day ? 'got' : '');
+    const extra = d === 7 ? `<small>${state.profile.streakSkin ? '+ bonuskist' : '+ Zonnestraal'}</small>` : '';
+    return `<div class="dr-tile ${cls} ${d === 7 ? 'big' : ''}"><span>Dag ${d}</span><b>+${xp}</b><em>XP</em>${extra}</div>`;
+  }).join('');
+  $('#dailyReward').innerHTML = `<div class="dr-card">
+    <div class="dr-flame">🔥</div>
+    <h2>${st.claimable ? `Dag ${st.count} op rij!` : `Reeks: ${st.count} ${st.count === 1 ? 'dag' : 'dagen'}`}</h2>
+    <p class="sub">${st.claimable
+      ? (st.broken ? `Je reeks van ${st.previous} dagen is gestopt — begin vandaag een nieuwe!` : 'Kom elke dag terug: hoe langer je reeks, hoe groter de beloning.')
+      : 'Beloning van vandaag is binnen. Morgen wacht de volgende!'}</p>
+    <div class="dr-grid">${tiles}</div>
+    ${st.claimable ? `<button class="btn primary big" id="claimBtn">Claim +${STREAK_REWARDS[day - 1]} XP</button>` : `<button class="btn ghost big" id="claimBtn">Sluiten</button>`}
+    <div class="dr-best">Langste reeks: <b>${Math.max(state.streak.best || 0, st.count)}</b> ${Math.max(state.streak.best || 0, st.count) === 1 ? 'dag' : 'dagen'}</div>
+  </div>`;
+  $('#dailyReward').classList.add('show');
+  $('#claimBtn').onclick = () => {
+    audio.ensure();
+    if (st.claimable) claimDailyReward(st);
+    $('#dailyReward').classList.remove('show');
+  };
+}
+
+function claimDailyReward(st) {
+  const prof = state.profile;
+  const xp = STREAK_REWARDS[st.day - 1];
+  let bonus = 0;
+  prof.xp += xp;
+  let newSkin = false;
+  if (st.day === 7) {
+    if (!prof.streakSkin) { prof.streakSkin = true; newSkin = true; }
+    else { bonus = 150 + Math.floor(Math.random() * 4) * 50; prof.xp += bonus; } // bonuskist: 150–300 XP
+  }
+  state.streak = { count: st.count, last: new Date().toLocaleDateString('sv'), best: Math.max(state.streak.best || 0, st.count) };
+  persist();
+  audio.play('win');
+  renderProfile();
+  renderDaily();
+  const msg = newSkin ? `Zonnestraal is vrijgespeeld!` : bonus ? `Bonuskist: +${bonus} XP extra!` : `+${xp} XP`;
+  showMenuToast(`🔥 Reeks van ${st.count} ${st.count === 1 ? 'dag' : 'dagen'}`, msg);
+  if (newSkin) { state.profile.skin = STREAK_SKIN.id; persist(); setPreviewSkin(STREAK_SKIN.id); renderProfile(); }
+}
+
+function showMenuToast(title, text) {
+  const el = document.createElement('div');
+  el.className = 'toast menu-toast';
+  el.innerHTML = `<div class="toast-icon">🔥</div><div><b>${title}</b><span>${text}</span></div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.classList.add('out'), 3000);
+  setTimeout(() => el.remove(), 3500);
 }
 
 // Uitdagingen live volgen: direct een toast zodra je er één haalt.
@@ -389,7 +454,7 @@ function showResults(st) {
   state.history = state.history.slice(0, 20);
 
   const unlocked = SKINS.filter((s) => s.unlockXp > prevXp && s.unlockXp <= prof.xp);
-  const allSkins = SKINS.every((s) => s.unlockXp <= prof.xp);
+  const allSkins = SKINS.every((s) => s.unlockXp <= prof.xp) && prof.streakSkin;
   const newAch = ACHIEVEMENTS.filter((a) => !prof.achievements.includes(a.id) && a.check(prof, match.stats, place, p.deaths, allSkins));
   prof.achievements.push(...newAch.map((a) => a.id));
   persist();
@@ -413,7 +478,7 @@ function showResults(st) {
     ${row('Ranglijstpunten', (ratingDelta >= 0 ? '+' : '') + ratingDelta + ` → ${prof.rating}`, ratingDelta >= 0 ? 'up' : 'down')}
     ${unlocked.map((s) => `<div class="unlock">Nieuw personage vrijgespeeld: <span style="color:${hex(s.body)}">${s.name}</span>!</div>`).join('')}
     ${newAch.map((a) => `<div class="unlock">${a.icon} Prestatie behaald: <b>${a.name}</b> — ${a.text}</div>`).join('')}
-    ${state.settings.breakReminder && sessionPlay >= BREAK_AFTER ? `<div class="pausehint">Je speelt al ${Math.round(sessionPlay / 60)} minuten. Tijd voor een korte pauze? Je voortgang blijft bewaard.</div>` : ''}`;
+`;
   requestAnimationFrame(() => requestAnimationFrame(() => { const f = $('#lvlFill'); if (f) f.style.width = L.progress * 100 + '%'; }));
   show('#results');
   hud.setVisible(false);
@@ -450,7 +515,6 @@ function frame() {
   if (match) {
     if (!paused) {
       match.update(dt, input);
-      if (!match.over) sessionPlay += dt;
       liveCheckT -= dt;
       if (liveCheckT <= 0) { liveCheckT = 0.5; checkLiveChallenges(); }
     }
@@ -470,6 +534,7 @@ setPreviewSkin(state.profile.skin);
 renderProfile();
 renderArenaCards();
 setTab('play');
+setTimeout(() => openDailyReward(), 700);
 frame();
 
 // handig voor debuggen / automatisch testen

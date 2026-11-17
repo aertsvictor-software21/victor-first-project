@@ -37,7 +37,21 @@ const POOL = [
   { id: 'revenge2', text: 'Neem 2× wraak', stat: 'revenge', target: 2, xp: 110 },
 ];
 
-export const today = () => new Date().toISOString().slice(0, 10);
+const localDay = (d) => d.toLocaleDateString('sv'); // JJJJ-MM-DD in lokale tijd
+export const today = () => localDay(new Date());
+const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return localDay(d); };
+
+// ---------- Dagreeks + dagelijkse beloning ----------
+// Elke dag dat je ARENA opent, claim je een beloning. Opeenvolgende dagen = hogere beloning.
+export const STREAK_REWARDS = [50, 75, 100, 125, 150, 200, 300]; // dag 1..7, daarna herhaalt de cyclus
+
+export function streakStatus(streak = { count: 0, last: null }) {
+  const t = today();
+  if (streak.last === t) return { claimable: false, count: streak.count, day: ((streak.count - 1) % 7) + 1 };
+  const continues = streak.last === yesterday();
+  const count = continues ? streak.count + 1 : 1;
+  return { claimable: true, count, day: ((count - 1) % 7) + 1, broken: !continues && streak.count > 1, previous: streak.count };
+}
 
 function seeded(seed) {
   let h = 2166136261;

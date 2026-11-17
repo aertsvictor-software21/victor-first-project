@@ -8,9 +8,10 @@ const RIVALS = [
 ];
 
 const defaults = () => ({
-  profile: { name: 'Speler', skin: 'pip', xp: 0, rating: 1000, matches: 0, wins: 0, bestKOs: 0, totalKOs: 0, lifetime: { ringOuts: 0, headshots: 0 }, achievements: [], arenaWins: [] },
-  settings: { quality: 'auto', sensitivity: 1, screenShake: true, showFps: false, volume: 0.5, difficulty: 'auto', arena: 'zonneweide', mode: 'standaard', breakReminder: true },
+  profile: { name: 'Speler', skin: 'pip', xp: 0, rating: 1000, matches: 0, wins: 0, bestKOs: 0, totalKOs: 0, lifetime: { ringOuts: 0, headshots: 0 }, achievements: [], arenaWins: [], streakSkin: false },
+  settings: { quality: 'auto', sensitivity: 1, screenShake: true, showFps: false, volume: 0.5, difficulty: 'auto', arena: 'zonneweide', mode: 'standaard' },
   daily: null,
+  streak: { count: 0, last: null, best: 0 },
   history: [],
 });
 
@@ -21,7 +22,7 @@ export function load() {
     const d = JSON.parse(raw), base = defaults();
     const profile = { ...base.profile, ...d.profile };
     profile.lifetime = { ...base.profile.lifetime, ...(d.profile?.lifetime || {}) };
-    return { profile, settings: { ...base.settings, ...d.settings }, history: d.history || [], daily: d.daily || null };
+    return { profile, settings: { ...base.settings, ...d.settings }, history: d.history || [], daily: d.daily || null, streak: { ...base.streak, ...(d.streak || {}) } };
   } catch { return defaults(); }
 }
 
