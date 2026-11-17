@@ -377,3 +377,14 @@ tr.you td:first-child { box-shadow: inset 3px 0 0 var(--cyan); }
   .res-grid { grid-template-columns: 1fr; }
   .dr-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* 20 spelers: compacte scoreborden */
+.scoreboard .board-card { max-height: 84vh; overflow: auto; min-width: 520px; }
+.scoreboard td { padding: 4px 10px; }
+.scoreboard td b { font-size: 17px; }
+.res-card table td { padding: 5px 10px; }
+.mini-count { align-self: flex-end; font-family: var(--head); font-weight: 700; font-style: italic; text-transform: uppercase; font-size: 12px; letter-spacing: .06em; color: var(--text-2); background: var(--panel); padding: 2px 10px; clip-path: var(--clip-sm); }
+.skill-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 4px 0 10px; }
+.skill-row div { background: var(--panel-2); padding: 8px; text-align: center; clip-path: var(--clip-sm); }
+.skill-row b { display: block; font-family: var(--head); font-weight: 900; font-style: italic; font-size: 26px; line-height: 1; color: var(--cyan); }
+.skill-row small { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; }

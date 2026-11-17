@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { toon, toonUnique, addOutline } from '../style/materials.js';
+import { toon, toonUnique, addOutline, toonGradient } from '../style/materials.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { PALETTE } from '../style/palette.js';
+
+const outlineMat = new THREE.MeshBasicMaterial({ color: PALETTE.ink, side: THREE.BackSide });
 
 // Gestileerd ARENA-personage: heroïsche, licht overdreven proporties
 // (brede schouders, smalle taille, stevige boots) in plaats van een "knuffelfiguur".
@@ -103,12 +107,13 @@ export class Character {
     const headMesh = add(GEO.head, toneMat, 0, 0, 0, 0.045);
     headMesh.scale.set(0.95, 1.06, 1);
     this.head.add(headMesh);
-    this.eyes = [];
+    this.eyeGroup = new THREE.Group();
+    this.eyeGroup.position.set(0, 0.02, 0.27);
+    this.head.add(this.eyeGroup);
     for (const sx of [-1, 1]) {
-      const eye = add(GEO.eye, eyeMat, sx * 0.105, 0.02, 0.27);
+      const eye = add(GEO.eye, eyeMat, sx * 0.105, 0, 0);
       eye.castShadow = false;
-      this.head.add(eye);
-      this.eyes.push(eye);
+      this.eyeGroup.add(eye);
       const brow = add(GEO.brow, darkMat, sx * 0.11, 0.1, 0.27);
       brow.rotation.z = sx * -0.2;  // vastberaden blik
       brow.castShadow = false;
@@ -147,8 +152,66 @@ export class Character {
     this.blinkT = 2 + Math.random() * 3;
     this.popT = -1; this.spawnT = -1;
     this.leanX = 0;
+    this.bakeAll();
     this.setWeapon('blaster');
   }
+
+  // Prestaties: alle statische onderdelen per bewegend lichaamsdeel samenvoegen tot
+  // één mesh met vertexkleuren + één contour-mesh. ~16 draw calls per personage
+  // in plaats van ~45, zodat 20 spelers tegelijk soepel blijven op laptops.
+  bakeAll() {
+    this.skinMat = new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: toonGradient(), emissive: 0xffffff, emissiveIntensity: 0 });
+    for (const m of this.materials) m.dispose();
+    this.materials = [this.skinMat];
+    this.baked = [];
+    const W = Object.values(this.weapons);
+    this.bakeGroup(this.spin, new Set([...this.legs, this.torsoG, this.gunPivot, this.leftArm]));
+    for (const h of this.legs) this.bakeGroup(h, new Set());
+    this.bakeGroup(this.torsoG, new Set([this.head]));
+    this.bakeGroup(this.head, new Set([this.eyeGroup]));
+    this.bakeGroup(this.eyeGroup, new Set(), false);
+    this.bakeGroup(this.gunPivot, new Set([...W, this.muzzle]));
+    for (const w of W) this.bakeGroup(w, new Set());
+    this.bakeGroup(this.leftArm, new Set());
+  }
+
+  bakeGroup(group, skip, outline = true) {
+    group.updateMatrixWorld(true);
+    const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
+    const solids = [], lines = [], remove = [];
+    const rel = new THREE.Matrix4();
+    const visit = (o) => {
+      for (const c of [...o.children]) {
+        if (skip.has(c)) continue;
+        if (c.isMesh) {
+          const g = c.geometry.index ? c.geometry.toNonIndexed() : c.geometry.clone();
+          for (const n of Object.keys(g.attributes)) if (n !== 'position' && n !== 'normal') g.deleteAttribute(n);
+          g.applyMatrix4(rel.multiplyMatrices(inv, c.matrixWorld));
+          if (c.userData.isOutline) lines.push(g);
+          else {
+            const col = c.material.color, n = g.attributes.position.count, arr = new Float32Array(n * 3);
+            for (let i = 0; i < n; i++) { arr[i * 3] = col.r; arr[i * 3 + 1] = col.g; arr[i * 3 + 2] = col.b; }
+            g.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+            solids.push(g);
+          }
+          remove.push(c);
+        }
+        visit(c);
+      }
+    };
+    visit(group);
+    for (const c of remove) c.removeFromParent();
+    if (solids.length) {
+      const m = new THREE.Mesh(mergeGeometries(solids, false), this.skinMat);
+      m.castShadow = true;
+      group.add(m);
+      this.baked.push(m);
+    }
+    if (outline && lines.length) group.add(new THREE.Mesh(mergeGeometries(lines, false), outlineMat));
+    [...solids, ...lines].forEach((g) => g.dispose());
+  }
+
+  setShadows(on) { for (const m of this.baked) m.castShadow = on; }
 
   mat(color) {
     const m = toonUnique(color, { emissive: 0xffffff, emissiveIntensity: 0 });
@@ -302,7 +365,7 @@ export class Character {
     this.blinkT -= dt;
     const blink = this.blinkT < 0.1 && this.blinkT > 0 ? 0.15 : 1;
     if (this.blinkT <= 0) this.blinkT = 2.5 + Math.random() * 3.5;
-    for (const e of this.eyes) e.scale.y = blink;
+    this.eyeGroup.scale.y = blink;
 
     // trefferflits
     if (this.flash > 0) {
@@ -317,6 +380,7 @@ export class Character {
   dispose() {
     for (const m of this.materials) m.dispose();
     this.ring.material.dispose();
+    this.root.traverse((o) => { if (o.isMesh && (o.material === this.skinMat || o.material === outlineMat)) o.geometry.dispose(); });
   }
 }
 

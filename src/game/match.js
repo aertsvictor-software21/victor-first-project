@@ -47,6 +47,7 @@ export class Fighter {
     this.intent = { moveX: 0, moveY: 0, jump: false, dash: false, fire: false, special: false, weapon: null, reload: false };
     this.inWater = false;
     this.splashT = 0;
+    this.wallT = 0; this.wallJumps = 0; this.wallNormal = new THREE.Vector3();
   }
 
   get forward() { return new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)); }
@@ -81,7 +82,7 @@ export class Match {
     this.remaining = this.rules.duration;
     this.over = false;
     // spelersstatistieken voor uitdagingen, prestaties en XP
-    this.stats = { kills: 0, killsBy: { blaster: 0, bouncer: 0, rocket: 0, special: 0 }, headshots: 0, ringOuts: 0, maxStreak: 0, pickups: 0, damage: 0, bestMulti: 0, revenge: 0 };
+    this.stats = { kills: 0, killsBy: { blaster: 0, bouncer: 0, rocket: 0, special: 0 }, headshots: 0, shots: 0, hits: 0, wallJumps: 0, headshotKos: 0, ringOuts: 0, maxStreak: 0, pickups: 0, damage: 0, bestMulti: 0, revenge: 0 };
     this.multi = 0; this.lastKoT = -99; this.nemesis = null;
     this.shake = 0;
     this.camYaw = 0; this.camPitch = 0.15;
@@ -91,6 +92,7 @@ export class Match {
       characters: () => this.fighters,
       damage: (t, a, o, opts) => this.damage(t, a, o, opts),
       explode: (p, w, o, d) => this.explode(p, w, o, d),
+      hit: (o) => { if (o?.isPlayer) this.stats.hits++; },
     });
 
     this.fighters = [];
@@ -104,6 +106,7 @@ export class Match {
     });
     for (const f of this.fighters) {
       scene.add(f.character.root);
+      f.character.setShadows(settings.charShadows !== 'none');
       this.respawn(f, true);
     }
     this.camYaw = player.yaw;
@@ -159,6 +162,7 @@ export class Match {
   // ----------------------------------------------------------------
   update(dt, input) {
     this.time += dt;
+    this.frameNo = (this.frameNo || 0) + 1;
     if (!this.over) this.remaining = Math.max(0, this.remaining - dt);
 
     if (!this.over) this.readPlayerInput(input);
@@ -176,6 +180,8 @@ export class Match {
       c.root.position.copy(f.pos);
       if (f.alive && c.popT < 0) c.root.rotation.y = f.yaw;
       c.update(dt, { speed: f.speed, onGround: f.onGround, aimPitch: f.pitch, invuln: f.invuln > 0, t: this.time });
+      // schaduwen alleen dichtbij op 'midden' (scheelt veel draw calls met 20 spelers)
+      if (this.settings.charShadows === 'near' && ((this.frameNo || 0) + f.id.charCodeAt(f.id.length - 1)) % 15 === 0) c.setShadows(f.pos.distanceTo(this.player.pos) < 16);
     }
     if (this.hidePlayer) this.player.character.squash.visible = false;
 
@@ -245,7 +251,18 @@ export class Match {
 
     // springen (incl. dubbelsprong)
     if (it.jump) {
-      if (f.onGround || f.coyote > 0) {
+      if (!f.onGround && f.coyote <= 0 && f.wallT > 0 && f.wallJumps < 3) {
+        // WALL-JUMP: zet af tegen de muur — beloont goede timing en beweging
+        f.vel.x = f.wallNormal.x * 11 + f.vel.x * 0.35;
+        f.vel.z = f.wallNormal.z * 11 + f.vel.z * 0.35;
+        f.vel.y = 12;
+        f.wallJumps++; f.jumps = 1; f.wallT = 0;
+        f.character.jump(true);
+        const at = f.pos.clone().addScaledVector(f.wallNormal, -0.4); at.y += 1;
+        this.effects.ring(at, { color: 0x2ee0ff, size: 1.8, life: 0.3, normal: f.wallNormal });
+        this.effects.burst(at, 8, { speed: 4, colors: [0x2ee0ff, 0xffffff], up: 2, life: 0.35, size: 0.9 });
+        if (f.isPlayer) { this.stats.wallJumps++; this.hud.xpPop('Wall-jump', 0); }
+      } else if (f.onGround || f.coyote > 0) {
         f.vel.y = JUMP_V; f.onGround = false; f.coyote = 0; f.jumps = 1;
         f.character.jump(false);
         this.effects.burst(f.pos, 5, { speed: 2.5, colors: FX_COLORS.dust, up: 1, life: 0.35, size: 1.2, grav: 2 });
@@ -286,7 +303,11 @@ export class Match {
     const vyBefore = f.vel.y;
     f.pos.x += f.vel.x * dt;
     f.pos.z += f.vel.z * dt;
-    this.world.resolveHorizontal(f.pos, RADIUS, HEIGHT);
+    if (this.world.resolveHorizontal(f.pos, RADIUS, HEIGHT) && !f.onGround) {
+      f.wallT = 0.2;
+      f.wallNormal.copy(this.world.lastWallNormal);
+    }
+    f.wallT = Math.max(0, f.wallT - dt);
     f.pos.y += f.vel.y * dt;
 
     if (f.vel.y > 0) {
@@ -304,6 +325,7 @@ export class Match {
       f.vel.y = 0;
       f.onGround = true;
       f.jumps = 0;
+      f.wallJumps = 0;
       f.coyote = 0.1;
     } else {
       f.onGround = false;
@@ -330,7 +352,7 @@ export class Match {
 
     // uit de arena gevallen
     if (f.pos.y < this.arena.killY) {
-      this.effects.burst(new THREE.Vector3(f.pos.x, this.arena.killY + 0.8, f.pos.z), 22, { speed: 5, colors: FX_COLORS.splash, up: 9, life: 0.8, size: 1.2 });
+      this.effects.burst(new THREE.Vector3(f.pos.x, this.arena.killY + 0.8, f.pos.z), 22, { speed: 5, colors: this.arena.def.pitColors || FX_COLORS.splash, up: 9, life: 0.8, size: 1.2 });
       const killer = f.lastAttacker && this.time - f.lastAttackT < 6 ? f.lastAttacker : null;
       this.ko(f, killer, 'fall');
     }
@@ -374,6 +396,7 @@ export class Match {
       dir.normalize();
     }
     this.projectiles.fire(w, f, muzzle, dir);
+    if (f.isPlayer) this.stats.shots++;
     f.character.fire(w.id === 'rocket' ? 2.5 : w.id === 'bouncer' ? 1.6 : 0.6);
     if (f.ammo[f.weapon] <= 0) f.reloadT = w.reload;
     if (f.isPlayer) {
@@ -410,9 +433,11 @@ export class Match {
     this.effects.explosion(pos, w.splash, w.colors);
     const dPlayer = pos.distanceTo(this.player.pos);
     if (dPlayer < 14) this.shake = Math.max(this.shake, (w.shake || 0.25) * (1 - dPlayer / 14));
+    let hitEnemy = false;
     for (const o of this.fighters) {
       if (!o.alive) continue;
       const c = o.pos.clone(); c.y += 0.9;
+      if (o !== owner && (o === direct || c.distanceTo(pos) < w.splash + 0.4)) hitEnemy = true;
       const d = c.distanceTo(pos);
       if (o === direct) {
         this.damage(o, w.damage + w.splashDamage * 0.5, owner, { dir: c.clone().sub(pos).normalize(), knock: w.knock, up: 5, weapon: w, direct: true });
@@ -424,6 +449,7 @@ export class Match {
         this.damage(o, dmg, owner, { dir, knock: w.knock * fall * (self ? 1.1 : 1), up: 6 * fall, weapon: w, self });
       }
     }
+    if (hitEnemy && owner?.isPlayer) this.stats.hits++;
     this.audio?.play('boom', { pos });
   }
 
@@ -443,6 +469,7 @@ export class Match {
       target.lastAttackT = this.time;
       attacker.damageDealt += amount;
       target.lastHitWeapon = special ? 'special' : weapon?.id || 'blaster';
+      target.lastHitHead = head;
       if (attacker.isPlayer) { this.stats.damage += amount; if (head) this.stats.headshots++; }
     }
     const hitPos = target.pos.clone(); hitPos.y += head ? 2.1 : 1.6;
@@ -494,6 +521,7 @@ export class Match {
     this.lastKoT = this.time;
     st.bestMulti = Math.max(st.bestMulti, this.multi);
     const pops = [['Eliminatie', 15]];
+    if (victim.lastHitHead && cause !== 'fall') { st.headshotKos = (st.headshotKos || 0) + 1; pops.push(['Headshot', 10]); }
     if (cause === 'fall') { st.ringOuts++; pops.push(['Uit de arena!', 10]); }
     if (victim.lastHitWeapon === 'special') pops.push(['Sprongstoot', 10]);
     if (this.multi >= 2) pops.push([['', '', 'Dubbel', 'Triple', 'Quad'][Math.min(this.multi, 4)] || 'Multi', 10 * this.multi]);

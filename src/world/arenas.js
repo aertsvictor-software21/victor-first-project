@@ -38,6 +38,32 @@ export const ARENAS = [
     sun: 0xfff0dc,
     build: buildSkyGarden,
   },
+  {
+    id: 'neonkelder',
+    name: 'Neonkelder',
+    tagline: 'Nachtelijke containerhal rond een bodemloze put',
+    swatch: ['#1D2240', '#FF3D8B', '#2EE0FF'],
+    sky: { top: 0x05071a, horizon: 0x2b1550, bottom: 0x0a0818 },
+    hemi: [0xb8c0ff, 0x2a1840],
+    sun: 0x9fb4ff,
+    dark: true,
+    light: { hemi: 1.2, sun: 1.4, fog: [26, 110], sunPos: [-20, 30, 12] },
+    pitColors: [0x8b5cf6, 0xff3d8b, 0x2ee0ff],
+    build: buildNeonVault,
+  },
+  {
+    id: 'lavakrater',
+    name: 'Lavakrater',
+    tagline: 'Basalten ring rond een kolkende lavaput',
+    swatch: ['#2A2228', '#FF5A1F', '#FFC83D'],
+    sky: { top: 0x12060c, horizon: 0x6a1e10, bottom: 0x1a0806 },
+    hemi: [0xffd6c2, 0x3a1810],
+    sun: 0xff8a50,
+    dark: true,
+    light: { hemi: 1.25, sun: 1.8, fog: [28, 130], sunPos: [30, 18, -16] },
+    pitColors: [0xff5a1f, 0xffc83d, 0xff3a00, 0x2a1414],
+    build: buildLavaCrater,
+  },
 ];
 
 export const getArena = (id) => ARENAS.find((a) => a.id === id) || ARENAS[0];
@@ -307,7 +333,90 @@ class Builder {
     this.group.add(inst);
   }
 
+  // Duidelijke arenagrens: stevige muur + transparante energiebarrière erboven.
+  ringWall(x, z, r, { height = 3.4, color = 0xf3ead8, stripe = 0xffd400, barrier = 0xffd400, gaps = [], thick = 0.7, glow = false } = {}) {
+    this.world.addRingWall(x, z, r - 0.05, gaps);
+    // segmenten tussen de openingen (hoeken in atan2(z, x)-ruimte)
+    const spans = [];
+    if (!gaps.length) spans.push([0, Math.PI * 2]);
+    else {
+      const g = [...gaps].map(([a, hw]) => [a - hw, a + hw]).sort((p, q) => p[0] - q[0]);
+      for (let i = 0; i < g.length; i++) spans.push([g[i][1], (i + 1 < g.length ? g[i + 1][0] : g[0][0] + Math.PI * 2)]);
+    }
+    const stripeMat = toon(stripe, glow ? { emissive: stripe, emissiveIntensity: 0.9 } : {});
+    const barrierMat = new THREE.MeshBasicMaterial({ color: barrier, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false });
+    const edgeMat = new THREE.MeshBasicMaterial({ color: barrier, transparent: true, opacity: 0.6 });
+    for (const [a0, a1] of spans) {
+      const len = a1 - a0, th0 = Math.PI / 2 - a1;
+      const seg = Math.max(6, Math.round(len * 14));
+      const mk = (rad, h, y, mat, opts) => { const m = this.mesh(new THREE.CylinderGeometry(rad, rad, h, seg, 1, true, th0, len), mat, opts); m.position.set(x, y, z); return m; };
+      mk(r + thick / 2, height, height / 2, toon(color, { side: THREE.DoubleSide }));
+      mk(r - 0.02, height, height / 2, toon(color, { side: THREE.DoubleSide }), { shadow: false });
+      mk(r - 0.04, 0.35, height - 0.45, stripeMat, { shadow: false });
+      // bovenrand
+      // afgeronde bovenrand (torusboog, afgeplat)
+      const capG = new THREE.Group();
+      capG.position.set(x, height, z);
+      capG.rotation.y = -a0;
+      const cap = new THREE.Mesh(new THREE.TorusGeometry(r + thick / 4, thick / 2, 4, seg, len), toon(color));
+      cap.rotation.x = Math.PI / 2;
+      cap.scale.z = 0.35;
+      capG.add(cap);
+      this.group.add(capG);
+      mk(r, 4.5, height + 2.25, barrierMat, { shadow: false, receive: false });
+      mk(r, 0.06, height + 4.5, edgeMat, { shadow: false, receive: false });
+    }
+    // openingen afsluiten met een paal aan elke kant
+    for (const [a, hw] of gaps) for (const sgn of [-1, 1]) {
+      const aa = a + sgn * hw;
+      this.pillar(x + Math.cos(aa) * r, z + Math.sin(aa) * r, thick * 0.7, 0, height + 0.3, color, false);
+    }
+  }
+
+  // Rechte wand (assen-uitgelijnd), oneindig hoog als collider.
+  wallBox(x0, z0, x1, z1, { height = 3.4, color = 0xf3ead8, stripe = 0xffd400, barrier = 0xffd400, glow = false, glass = false } = {}) {
+    const w = x1 - x0, d = z1 - z0;
+    this.world.addBox(new THREE.Vector3(x0, -50, z0), new THREE.Vector3(x1, 200, z1));
+    if (glass) {
+      const m = this.mesh(new THREE.BoxGeometry(w, height, d), new THREE.MeshBasicMaterial({ color: barrier, transparent: true, opacity: 0.18, depthWrite: false }), { shadow: false, receive: false });
+      m.position.set((x0 + x1) / 2, height / 2, (z0 + z1) / 2);
+      this.box((x0 + x1) / 2, height - 0.12, (z0 + z1) / 2, w + 0.04, 0.16, d + 0.04, stripe, { radius: 0.05, collide: false });
+      return;
+    }
+    this.box((x0 + x1) / 2, 0, (z0 + z1) / 2, w, height, d, color, { radius: 0.08, collide: false });
+    const strip = this.mesh(new THREE.BoxGeometry(w + 0.02, 0.3, d + 0.02), toon(stripe, glow ? { emissive: stripe, emissiveIntensity: 0.9 } : {}), { shadow: false });
+    strip.position.set((x0 + x1) / 2, height - 0.5, (z0 + z1) / 2);
+    const bar = this.mesh(new THREE.BoxGeometry(w, 4.5, d), new THREE.MeshBasicMaterial({ color: barrier, transparent: true, opacity: 0.1, depthWrite: false }), { shadow: false, receive: false });
+    bar.position.set((x0 + x1) / 2, height + 2.25, (z0 + z1) / 2);
+  }
+
+  pointLight(x, y, z, color, intensity = 40, distance = 22) {
+    const l = new THREE.PointLight(color, intensity, distance, 1.6);
+    l.position.set(x, y, z);
+    this.group.add(l);
+    return l;
+  }
+
+  glowMat(color, k = 0.8) { return toon(color, { emissive: color, emissiveIntensity: k }); }
+
   spawn(x, y, z) { this.spawns.push(new THREE.Vector3(x, y, z)); }
+
+  // Vul spawnpunten aan tot er genoeg zijn voor 20 spelers.
+  fillSpawns(n = 24) {
+    const tries = 4000, R = this.bounds - 1.5;
+    const tmp = new THREE.Vector3();
+    for (let i = 0; i < tries && this.spawns.length < n; i++) {
+      const x = (Math.random() * 2 - 1) * R, z = (Math.random() * 2 - 1) * R;
+      if (Math.hypot(x, z) > R) continue;
+      const g = this.world.groundHeight(x, z, 0.3);
+      if (g < -0.1 || g > 0.35) continue;
+      if (this.world.zoneAt(x, z, g)) continue;
+      tmp.set(x, g, z);
+      if (this.world.resolveHorizontal(tmp, 0.7, 1.9)) continue;
+      if (this.spawns.some((s) => s.distanceTo(tmp) < 3.2)) continue;
+      this.spawns.push(tmp.clone());
+    }
+  }
   pickup(x, y, z) { this.pickups.push(new THREE.Vector3(x, y, z)); }
 }
 
@@ -370,7 +479,8 @@ function buildMeadow(b) {
     b.spawn(Math.cos(a) * 19, 0, Math.sin(a) * 19);
   }
   b.pickup(0, 2.55, 0);
-  b.bounds = R;
+  b.ringWall(0, 0, R - 0.6, { color: 0xf3ead8, stripe: 0x3d8bff, barrier: 0x7fd0ff });
+  b.bounds = R - 1;
 }
 
 // ------------------------------------------------------------------
@@ -391,11 +501,6 @@ function buildBeach(b) {
   b.jumpPad(0, 0, 7.2, 19, 0xff5d73);
   b.jumpPad(0, 0, -7.2, 19, 0xff5d73);
 
-  // houten steigers de zee in
-  for (const [x, z, w, d] of [[24, 0, 12, 3.2], [-24, 0, 12, 3.2]]) {
-    b.box(x, -0.2, z, w, 0.5, d, 0xc28a5a, { radius: 0.08 });
-    for (let i = -2; i <= 2; i++) b.pillar(x + i * 2.6, z + d / 2 - 0.3, 0.2, -2, -0.2, 0x9a6440, false);
-  }
 
   // kratstapels als dekking
   const crates = [[10, 12], [-10, -12], [-12, 10], [12, -10], [18, 7], [-18, -7]];
@@ -444,7 +549,8 @@ function buildBeach(b) {
     b.spawn(Math.cos(a) * 17, 0, Math.sin(a) * 17);
   }
   b.pickup(0, 1.3, 0);
-  b.bounds = R;
+  b.ringWall(0, 0, R - 0.6, { color: 0xf6e7c4, stripe: 0xff7a63, barrier: 0x2fd9e0 });
+  b.bounds = R - 1;
 }
 
 // ------------------------------------------------------------------
@@ -522,13 +628,210 @@ function buildSkyGarden(b) {
     b.spawn(x * 1.05 - (z ? 2 : 0), 0, z * 1.05 - (x ? 2 : 0));
   });
   b.pickup(0, 7.7, 0);
-  b.bounds = 30;
+  // muren rond elk eiland met openingen voor de bruggen + glazen relingen
+  const hw = 0.19;
+  b.ringWall(0, 0, 9.7, { color: 0xf3ecff, stripe: 0x8b5cf6, barrier: 0xb9a6ff, gaps: [[0, hw], [Math.PI / 2, hw], [Math.PI, hw], [-Math.PI / 2, hw]] });
+  const ohw = 0.26;
+  b.ringWall(22, 0, 7.2, { color: 0xf3ecff, stripe: 0x2ee6a8, barrier: 0xb9a6ff, gaps: [[Math.PI, ohw]] });
+  b.ringWall(-22, 0, 7.2, { color: 0xf3ecff, stripe: 0x2ee6a8, barrier: 0xb9a6ff, gaps: [[0, ohw]] });
+  b.ringWall(0, 22, 7.2, { color: 0xf3ecff, stripe: 0x2ee6a8, barrier: 0xb9a6ff, gaps: [[-Math.PI / 2, ohw]] });
+  b.ringWall(0, -22, 7.2, { color: 0xf3ecff, stripe: 0x2ee6a8, barrier: 0xb9a6ff, gaps: [[Math.PI / 2, ohw]] });
+  const rail = { height: 2.6, barrier: 0xb9a6ff, stripe: 0xffffff, glass: true };
+  for (const sx of [-1, 1]) {
+    b.wallBox(sx > 0 ? 9.3 : -15.2, 1.6, sx > 0 ? 15.2 : -9.3, 1.85, rail);
+    b.wallBox(sx > 0 ? 9.3 : -15.2, -1.85, sx > 0 ? 15.2 : -9.3, -1.6, rail);
+    b.wallBox(1.6, sx > 0 ? 9.3 : -15.2, 1.85, sx > 0 ? 15.2 : -9.3, rail);
+    b.wallBox(-1.85, sx > 0 ? 9.3 : -15.2, -1.6, sx > 0 ? 15.2 : -9.3, rail);
+  }
+  b.bounds = 29;
+}
+
+// ------------------------------------------------------------------
+// Neonkelder — compact, donker, containers en een bodemloze put
+// ------------------------------------------------------------------
+function buildNeonVault(b) {
+  const H = 16.5, P = 3.6; // halve breedte arena, halve breedte put
+  b.killY = -5;
+  const floorC = 0x1d2240, floorTop = 0x262c52;
+  // vloer rondom de put
+  for (const [x0, z0, x1, z1] of [[-H, P, H, H], [-H, -H, H, -P], [-H, -P, -P, P], [P, -P, H, P]]) {
+    b.box((x0 + x1) / 2, -1, (z0 + z1) / 2, x1 - x0, 1, z1 - z0, floorTop, { radius: 0.04 });
+  }
+  // neonlijnen in de vloer
+  const lineC = b.glowMat(0x2ee0ff, 0.9), lineM = b.glowMat(0xff3d8b, 0.9);
+  for (const k of [-8, 8]) {
+    const l1 = b.mesh(new THREE.BoxGeometry(2 * H, 0.03, 0.12), lineC, { shadow: false }); l1.position.set(0, 0.015, k);
+    const l2 = b.mesh(new THREE.BoxGeometry(0.12, 0.03, 2 * H), lineC, { shadow: false }); l2.position.set(k, 0.015, 0);
+  }
+  // putrand en diepte
+  for (const [x, z, w, d] of [[0, P, 2 * P + 0.3, 0.15], [0, -P, 2 * P + 0.3, 0.15], [P, 0, 0.15, 2 * P], [-P, 0, 0.15, 2 * P]]) {
+    const m = b.mesh(new THREE.BoxGeometry(w, 0.1, d), lineM, { shadow: false }); m.position.set(x, 0.03, z);
+  }
+  const abyss = b.mesh(new THREE.PlaneGeometry(2 * P, 2 * P), new THREE.MeshBasicMaterial({ color: 0x8b5cf6, transparent: true, opacity: 0.55 }), { shadow: false, receive: false });
+  abyss.rotation.x = -Math.PI / 2; abyss.position.y = -7;
+  for (let i = 1; i <= 3; i++) {
+    const fr = b.mesh(new THREE.BoxGeometry(2 * P, 0.08, 2 * P), new THREE.MeshBasicMaterial({ color: 0xff3d8b, transparent: true, opacity: 0.25, wireframe: true }), { shadow: false, receive: false });
+    fr.position.y = -i * 1.8;
+  }
+  b.world.addZone('pit', 0, 0, P, 0);
+
+  // muren
+  const wall = { height: 4.2, color: 0x141933, stripe: 0x2ee0ff, barrier: 0xff3d8b, glow: true };
+  b.wallBox(-H - 1, -H - 1, H + 1, -H, wall);
+  b.wallBox(-H - 1, H, H + 1, H + 1, { ...wall, stripe: 0xff3d8b, barrier: 0x2ee0ff });
+  b.wallBox(-H - 1, -H, -H, H, { ...wall, stripe: 0x8b5cf6 });
+  b.wallBox(H, -H, H + 1, H, { ...wall, stripe: 0x8b5cf6 });
+
+  // containers als dekking (kleuren + neonstrip)
+  const cont = [
+    [-10, -3, 2.6, 5.6, 0x1f6f8b], [10, 3, 2.6, 5.6, 0x8b1f5a], [-4, -11.5, 5.6, 2.6, 0x3b2a8b], [4, 11.5, 5.6, 2.6, 0x1f8b5a],
+    [-12.5, 9, 2.4, 2.4, 0x8b5a1f], [12.5, -9, 2.4, 2.4, 0x8b5a1f], [-7, 6.5, 2.2, 2.2, 0x2a3150], [7, -6.5, 2.2, 2.2, 0x2a3150],
+  ];
+  cont.forEach(([x, z, w, d, c], i) => {
+    const h = i < 4 ? 2.6 : 1.4;
+    b.box(x, 0, z, w, h, d, c, { radius: 0.06, outline: true });
+    const s = b.mesh(new THREE.BoxGeometry(w + 0.04, 0.12, d + 0.04), i % 2 ? lineC : lineM, { shadow: false });
+    s.position.set(x, h - 0.25, z);
+  });
+  // tweede laag op twee containers
+  b.box(-10, 2.6, -4, 2.4, 1.3, 2.4, 0x2a3150, { radius: 0.06, outline: true });
+  b.box(10, 2.6, 4, 2.4, 1.3, 2.4, 0x2a3150, { radius: 0.06, outline: true });
+
+  // neonpilaren bij de put
+  for (const [x, z] of [[-6.2, -6.2], [6.2, 6.2], [-6.2, 6.2], [6.2, -6.2]]) {
+    b.pillar(x, z, 0.55, 0, 4.2, 0x141933);
+    const band = b.mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.18, 14), x * z > 0 ? lineC : lineM, { shadow: false });
+    band.position.set(x, 2.2, z);
+  }
+  // springplatforms naar de containers
+  b.jumpPad(-13.5, 0, -3, 15, 0x2ee0ff);
+  b.jumpPad(13.5, 0, 3, 15, 0xff3d8b);
+  b.jumpPad(0, 0, -8.5, 14, 0x8b5cf6);
+  b.jumpPad(0, 0, 8.5, 14, 0x8b5cf6);
+
+  // skyline buiten de muren
+  for (let i = 0; i < 26; i++) {
+    const a = (i / 26) * Math.PI * 2, r = 45 + (i % 4) * 10;
+    const h = 14 + ((i * 7) % 5) * 7;
+    const tower = b.mesh(new THREE.BoxGeometry(6, h, 6), toon(0x0e1230), { shadow: false });
+    tower.position.set(Math.cos(a) * r, h / 2 - 2, Math.sin(a) * r);
+    const lamp = b.mesh(new THREE.BoxGeometry(6.1, 0.4, 6.1), i % 3 === 0 ? lineM : i % 3 === 1 ? lineC : b.glowMat(0x8b5cf6), { shadow: false });
+    lamp.position.set(tower.position.x, h - 2.6, tower.position.z);
+  }
+
+  b.pointLight(-11, 4, -11, 0x2ee0ff, 45, 24);
+  b.pointLight(11, 4, 11, 0xff3d8b, 45, 24);
+  const pitLight = b.pointLight(0, -1, 0, 0x8b5cf6, 30, 12);
+  b.animated.push((dt, t) => { pitLight.intensity = 26 + Math.sin(t * 3) * 8; });
+
+  for (const [x, z] of [[-10, -3], [10, 3], [0, -13.5], [0, 13.5]]) b.pickup(x, x ? 2.6 : 0, z);
+  b.bounds = H;
+}
+
+// ------------------------------------------------------------------
+// Lavakrater — kleine ronde arena met een dodelijke lavaput
+// ------------------------------------------------------------------
+function buildLavaCrater(b) {
+  const R = 18.5, P = 4.6;
+  b.killY = -0.9;
+  // basaltvloer met put
+  const floor = b.mesh(new THREE.RingGeometry(P, R + 0.5, 56, 1), toon(0x2e2529), { shadow: false });
+  floor.rotation.x = -Math.PI / 2;
+  b.world.addAnnulus(0, 0, P, R + 1, -6, 0);
+  const pitWall = b.mesh(new THREE.CylinderGeometry(P, P, 1.4, 40, 1, true), toon(0x1a1416, { side: THREE.BackSide }), { shadow: false });
+  pitWall.position.y = -0.7;
+  const rim = b.mesh(new THREE.TorusGeometry(P, 0.12, 6, 48), b.glowMat(0xff5a1f, 1), { shadow: false });
+  rim.rotation.x = Math.PI / 2; rim.position.y = 0.02;
+  const lavaMat = toon(0xff5a1f, { emissive: 0xff3a00, emissiveIntensity: 1 });
+  const lava = b.mesh(new THREE.CircleGeometry(P, 40), lavaMat, { shadow: false });
+  lava.rotation.x = -Math.PI / 2; lava.position.y = -1.05;
+  lava.userData.dynamic = true;
+  b.world.addZone('pit', 0, 0, P, 0);
+  // stapstenen in de lava (risico = beloning)
+  b.pillar(0, 0, 1.15, -1.2, 0.25, 0x3a2e33);
+  for (let i = 0; i < 3; i++) {
+    const a = i * (Math.PI * 2 / 3) + 0.5;
+    b.pillar(Math.cos(a) * 2.9, Math.sin(a) * 2.9, 0.75, -1.2, 0, 0x3a2e33);
+  }
+  b.pickup(0, 0.25, 0);
+
+  // rotswand met gloeiende scheuren
+  b.ringWall(0, 0, R, { height: 4.4, color: 0x221b1f, stripe: 0xff5a1f, barrier: 0xff7a1a, glow: true, thick: 1.2 });
+  const crackM = b.glowMat(0xff7a1a, 1);
+  for (let i = 0; i < 18; i++) {
+    const a = (i / 18) * Math.PI * 2 + 0.1;
+    const c = b.mesh(new THREE.BoxGeometry(0.12, 1.4 + (i % 3) * 0.6, 0.05), crackM, { shadow: false });
+    c.position.set(Math.cos(a) * (R - 0.08), 1.2 + (i % 2) * 0.6, Math.sin(a) * (R - 0.08));
+    c.rotation.y = -a + Math.PI / 2; c.rotation.z = (i % 2 ? 0.3 : -0.25);
+    const spike = b.mesh(new THREE.ConeGeometry(0.7, 1.6 + (i % 3) * 0.6, 5), toon(0x221b1f), { shadow: false });
+    spike.position.set(Math.cos(a) * (R + 0.4), 4.4 + 0.6, Math.sin(a) * (R + 0.4));
+  }
+
+  // basaltzuilen als dekking
+  const cols = [[8, 0, 1.0, 3.2], [-8, 0, 1.0, 3.2], [0, 8.5, 1.0, 3.2], [0, -8.5, 1.0, 3.2], [6, 6, 0.8, 1.2], [-6, -6, 0.8, 1.2], [-6, 6, 0.8, 1.2], [6, -6, 0.8, 1.2]];
+  for (const [x, z, r, h] of cols) {
+    const m = b.mesh(new THREE.CylinderGeometry(r, r * 1.1, h, 6), toon(0x3a2e33), {});
+    m.position.set(x, h / 2, z);
+    addOutline(m, 0.04);
+    b.world.addCylinder(x, z, r, 0, h);
+  }
+  // verhoogde richels tegen de muur met trap
+  for (const sx of [-1, 1]) {
+    b.platform(sx * 13.2, 2.6, 0, 3.6, 9, 0x2e2529, 0x4a3a3f, 2.6);
+    for (let s = 0; s < 5; s++) b.box(sx * 13.2, 0, -4.95 - (4 - s) * 0.9, 3.6, (s + 1) * 0.52, 0.9, 0x3a2e33, { radius: 0.06 });
+  }
+  for (const sz of [-1, 1]) {
+    b.platform(0, 2.6, sz * 13.2, 9, 3.6, 0x2e2529, 0x4a3a3f, 2.6);
+    b.pickup(0, 2.6, sz * 13.2);
+  }
+  b.jumpPad(10.2, 0, 4.8, 14, 0xff5a1f);
+  b.jumpPad(-10.2, 0, -4.8, 14, 0xff5a1f);
+  b.jumpPad(4.8, 0, -10.2, 14, 0xff5a1f);
+  b.jumpPad(-4.8, 0, 10.2, 14, 0xff5a1f);
+  // rotsblokken
+  [[11, 9, 1.1], [-11, -9, 1.1], [-11, 9, 1.0], [11, -9, 1.0]].forEach(([x, z, s], i) => b.rock(x, 0, z, s, 0x3a2e33, i));
+
+  // vulkanen in de verte
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 + 0.3, r = 70 + (i % 3) * 20, h = 25 + (i % 3) * 12;
+    const v = b.mesh(new THREE.ConeGeometry(h * 0.9, h, 8), toon(0x1c1215), { shadow: false });
+    v.position.set(Math.cos(a) * r, h / 2 - 4, Math.sin(a) * r);
+    const top = b.mesh(new THREE.ConeGeometry(h * 0.18, h * 0.2, 8), b.glowMat(0xff5a1f, 1), { shadow: false });
+    top.position.set(v.position.x, h - 4 - h * 0.1 + 0.5, v.position.z);
+  }
+
+  // opstijgende sintels (1 draw call)
+  const N = b.quality === 'low' ? 40 : 90;
+  const embers = new THREE.InstancedMesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), new THREE.MeshBasicMaterial({ color: 0xffa040 }), N);
+  embers.frustumCulled = false;
+  const ep = Array.from({ length: N }, () => ({ x: (Math.random() - 0.5) * 2 * R, z: (Math.random() - 0.5) * 2 * R, y: Math.random() * 10, v: 0.6 + Math.random() * 1.4, ph: Math.random() * 6 }));
+  b.group.add(embers);
+  const m4 = new THREE.Matrix4();
+  b.animated.push((dt, t) => {
+    for (let i = 0; i < N; i++) {
+      const e = ep[i];
+      e.y += e.v * dt;
+      if (e.y > 12) { e.y = 0; const a = Math.random() * 6.28, r = Math.random() * P; e.x = Math.cos(a) * r * 1.4; e.z = Math.sin(a) * r * 1.4; }
+      m4.makeTranslation(e.x + Math.sin(t + e.ph) * 0.4, e.y - 0.5, e.z + Math.cos(t * 0.8 + e.ph) * 0.4);
+      embers.setMatrixAt(i, m4);
+    }
+    embers.instanceMatrix.needsUpdate = true;
+    lavaMat.emissiveIntensity = 0.85 + Math.sin(t * 2.2) * 0.2;
+    lava.rotation.z = t * 0.05;
+  });
+
+  const lavaLight = b.pointLight(0, 1.2, 0, 0xff6a20, 60, 20);
+  b.pointLight(-12, 4, -12, 0xff7a1a, 25, 16);
+  b.pointLight(12, 4, 12, 0xff7a1a, 25, 16);
+  b.animated.push((dt, t) => { lavaLight.intensity = 52 + Math.sin(t * 2.2) * 12; });
+  b.bounds = R - 1;
 }
 
 // ------------------------------------------------------------------
 export function buildArena(def, quality) {
   const b = new Builder(quality);
   def.build(b);
+  b.fillSpawns(24);
   mergeStatic(b.group);
   b.group.add(makeSky(def.sky));
   return {

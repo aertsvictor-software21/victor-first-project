@@ -55,7 +55,7 @@ export class Hud {
           <p>Klik om verder te spelen</p>
           <div class="row"><button class="btn primary" id="resumeBtn">Verder spelen</button><button class="btn ghost" id="quitBtn">Match verlaten</button></div>
           <div class="controls-hint">
-            <span><kbd>WASD</kbd> bewegen</span><span><kbd>Muis</kbd> richten / schieten</span><span><kbd>Spatie</kbd> (dubbel)sprong</span>
+            <span><kbd>WASD</kbd> bewegen</span><span><kbd>Muis</kbd> richten / schieten</span><span><kbd>Spatie</kbd> (dubbel)sprong</span><span><kbd>Spatie</kbd> tegen muur in de lucht = wall-jump</span>
             <span><kbd>Shift</kbd> dash</span><span><kbd>E</kbd> Sprongstoot</span><span><kbd>1-3</kbd> wapens</span><span><kbd>R</kbd> herladen</span><span><kbd>Tab</kbd> scorebord</span>
           </div>
         </div>
@@ -146,7 +146,7 @@ export class Hud {
       this.lastMini = key;
       const top = st.slice(0, 4);
       if (!top.includes(p)) top.push(p);
-      this.el.mini.innerHTML = top.map((f) => `<div class="mini-row ${f.isPlayer ? 'you' : ''}"><b>${st.indexOf(f) + 1}</b><i style="background:${hex(f.skin.body)}"></i><span>${f.name}</span><em>${f.kills}</em></div>`).join('');
+      this.el.mini.innerHTML = top.map((f) => `<div class="mini-row ${f.isPlayer ? 'you' : ''}"><b>${st.indexOf(f) + 1}</b><i style="background:${hex(f.skin.body)}"></i><span>${f.name}</span><em>${f.kills}</em></div>`).join('') + `<div class="mini-count">${m.fighters.filter((f) => f.alive).length}/${m.fighters.length} in de arena</div>`;
     }
 
     // naamlabels boven bots
@@ -193,7 +193,7 @@ export class Hud {
     el.innerHTML = `<div class="board-card">
       <h3>${final ? 'Eindstand' : 'Scorebord'}</h3>
       <table><thead><tr><th>#</th><th>Speler</th><th>Elim</th><th>Uit</th><th>Schade</th></tr></thead><tbody>
-      ${st.map((f, i) => `<tr class="${f.isPlayer ? 'you' : ''} ${i < 3 ? 'p' + (i + 1) : ''}"><td><span class="pos">${i + 1}</span></td><td><i style="background:${hex(f.skin.body)}"></i>${f.name}</td><td><b>${f.kills}</b></td><td>${f.deaths}</td><td>${f.damageDealt}</td></tr>`).join('')}
+      ${st.map((f, i) => [f, i]).filter(([f, i]) => !final || i < 10 || f.isPlayer).map(([f, i]) => `<tr class="${f.isPlayer ? 'you' : ''} ${i < 3 ? 'p' + (i + 1) : ''}"><td><span class="pos">${i + 1}</span></td><td><i style="background:${hex(f.skin.body)}"></i>${f.name}</td><td><b>${f.kills}</b></td><td>${f.deaths}</td><td>${f.damageDealt}</td></tr>`).join('')}
       </tbody></table></div>`;
   }
 
@@ -244,7 +244,7 @@ export class Hud {
   xpPop(label, xp) {
     const el = document.createElement('div');
     el.className = 'xp-pop';
-    el.innerHTML = `<b>+${xp}</b> ${label}`;
+    el.innerHTML = xp ? `<b>+${xp}</b> ${label}` : `<b>${label}</b>`;
     this.el.pops.appendChild(el);
     setTimeout(() => el.remove(), 1600);
     while (this.el.pops.children.length > 5) this.el.pops.firstChild.remove();

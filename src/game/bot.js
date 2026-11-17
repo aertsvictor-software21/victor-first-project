@@ -103,8 +103,8 @@ export class BotBrain {
       const probe = f.pos.clone().addScaledVector(moveDir, 2.2);
       const g = m.world.groundHeight(probe.x, probe.z, f.pos.y + 0.2);
       if (g === -Infinity || g < f.pos.y - 3.5) {
-        const toCenter = new THREE.Vector3(-f.pos.x, 0, -f.pos.z).normalize();
-        moveDir.copy(toCenter).add(moveDir.multiplyScalar(-0.3)).normalize();
+        // afgrond/put: draai om en zijwaarts weg (niet naar het midden — daar kan een put zitten)
+        moveDir.set(-moveDir.x + moveDir.z * 0.5, 0, -moveDir.z - moveDir.x * 0.5).normalize();
         this.strafeDir *= -1;
       }
     }

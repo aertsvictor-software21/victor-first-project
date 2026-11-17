@@ -30,6 +30,7 @@ Op zwakkere toestellen (Chromebooks, ≤ 4 cores of ≤ 4 GB geheugen) start de 
 | `WASD` | Bewegen |
 | Muis | Richten · linkermuisknop = schieten |
 | `Spatie` | Springen (2× = dubbelsprong met salto) |
+| `Spatie` tegen een muur in de lucht | **Wall-jump** (max. 3 achter elkaar) |
 | `Shift` | Dash |
 | `E` / `Q` | Special: **Sprongstoot** (schokgolf + lancering) |
 | `1` `2` `3` / scrollwiel | Wapen wisselen |
@@ -39,8 +40,9 @@ Op zwakkere toestellen (Chromebooks, ≤ 4 cores of ≤ 4 GB geheugen) start de 
 
 ## Wat zit erin
 
-- **3 arena's met eigen karakter** — Zonneweide (grasland + vijver), Koraalbaai (strand + lagune), Wolkentuin (zwevende eilanden).
-  Springplatforms, water dat je vertraagt, dekking op meerdere hoogtes en health-pickups.
+- **20 spelers per match** (jij + 19 bots) in afgebakende arena's met duidelijke muren en een energiebarrière erboven.
+- **5 arena's** — Zonneweide, Koraalbaai, Wolkentuin en twee compacte, duistere arena's voor maximale chaos:
+  **Neonkelder** (nachtelijke containerhal rond een bodemloze put) en **Lavakrater** (basalten ring rond een dodelijke lavaput).
 - **Gestileerde personages** — heroïsche proporties, signatuurkleur en unieke headgear per personage.
   Loopanimatie vanuit de heup, salto bij dubbelsprong, trefferflits. 8 personages + 1 dagreeks-exclusief.
 - **3 wapens met eigen effecten** — Pulsgeweer (snel, headshots), Stuiterwerper (stuitert, splash), Raketwerper (grote knal, knockback, raketsprong).
@@ -49,6 +51,13 @@ Op zwakkere toestellen (Chromebooks, ≤ 4 cores of ≤ 4 GB geheugen) start de 
   XP, ranglijstpunten, divisies (Brons → Diamant) en een seizoensranglijst.
 - **Licht voor laptops** — toon-shading zonder post-processing, instancing, samengevoegde statische geometrie,
   gepoolde projectielen en deeltjes, kwaliteitsniveaus Laag/Midden/Hoog en automatische terugschakeling bij lage FPS.
+
+## Skill
+
+- **Wall-jumps** tegen elke muur: ontwijken, hoge plekken bereiken, tegenstanders verrassen.
+- **Headshots** doen dubbele schade met het Pulsgeweer; een headshot-eliminatie geeft extra XP.
+- **Raketsprong**, knockback en putten: blaas tegenstanders in de put of lava.
+- Na elke match zie je je **nauwkeurigheid**, headshots en wall-jumps; uitdagingen en prestaties belonen precisie.
 
 ## Waarom je terugkomt
 

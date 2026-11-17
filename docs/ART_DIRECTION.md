@@ -32,7 +32,18 @@ Dit document verandert alleen de visuele stijl. Gameplay en techniek blijven gel
 | `orange` | `#FF7A1A` | Dagreeks, beloningen |
 
 ### Wereld
-Blijft zonnig: blauwe lucht, groen gras en turquoise water. Het licht is warmer en lager (namiddagzon) voor meer contrast en langere schaduwen.
+De drie daglicht-arena's blijven zonnig: blauwe lucht, groen gras en turquoise water. Het licht is warmer en lager (namiddagzon) voor meer contrast en langere schaduwen.
+
+### Duistere arena's
+| Arena | Sfeer | Accenten | Licht |
+|---|---|---|---|
+| **Neonkelder** | Nachtelijke containerhal, skyline in de verte | Cyaan + magenta neon, violette put | Koel maanlicht + 3 gekleurde puntlichten |
+| **Lavakrater** | Basalten ring met gloeiende scheuren en vulkanen | Oranje lava, opstijgende sintels | Laag warm licht + pulserend lavalicht |
+
+Ook in de donkere arena's blijven personages goed leesbaar: het hemellicht is helder genoeg, en vijanden hebben magenta naamlabels.
+
+### Arenagrenzen
+Elke arena is afgebakend met een stevige muur (≈ 3,4–4,4 m) met een gekleurde band, plus een transparante energiebarrière erboven. Je ziet dus altijd waar de arena eindigt. De muren zijn onbeperkt hoog als collider en zijn het belangrijkste speelvlak voor wall-jumps.
 
 ## 3. Typografie
 

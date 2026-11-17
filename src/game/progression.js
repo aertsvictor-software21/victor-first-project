@@ -35,6 +35,9 @@ const POOL = [
   { id: 'streak4', text: 'Haal een reeks van 4 eliminaties', stat: 'maxStreak', target: 4, xp: 160, mode: 'max' },
   { id: 'multi2', text: 'Maak een dubbele eliminatie', stat: 'bestMulti', target: 2, xp: 140, mode: 'max' },
   { id: 'revenge2', text: 'Neem 2× wraak', stat: 'revenge', target: 2, xp: 110 },
+  { id: 'wall10', text: 'Doe 10 wall-jumps', stat: 'wallJumps', target: 10, xp: 120 },
+  { id: 'hskill3', text: '3 headshot-eliminaties', stat: 'headshotKos', target: 3, xp: 150 },
+  { id: 'pit3', text: '3 tegenstanders in een put of lava geblazen', stat: 'ringOuts', target: 3, xp: 150 },
 ];
 
 const localDay = (d) => d.toLocaleDateString('sv'); // JJJJ-MM-DD in lokale tijd
@@ -74,7 +77,7 @@ export const challengeDef = (id) => POOL.find((c) => c.id === id);
 export function matchStatValues(stats, place) {
   return {
     kills: stats.kills, headshots: stats.headshots, ringOuts: stats.ringOuts, pickups: stats.pickups,
-    damage: stats.damage, maxStreak: stats.maxStreak, bestMulti: stats.bestMulti, revenge: stats.revenge,
+    damage: stats.damage, maxStreak: stats.maxStreak, wallJumps: stats.wallJumps, headshotKos: stats.headshotKos, bestMulti: stats.bestMulti, revenge: stats.revenge,
     ko_blaster: stats.killsBy.blaster, ko_bouncer: stats.killsBy.bouncer, ko_rocket: stats.killsBy.rocket, ko_special: stats.killsBy.special,
     top3: place <= 3 ? 1 : 0, wins: place === 1 ? 1 : 0, matches: 1,
   };
@@ -106,5 +109,7 @@ export const ACHIEVEMENTS = [
   { id: 'allarenas', name: 'Wereldreiziger', text: 'Win in alle drie de arena\'s', icon: '🗺', check: (p) => (p.arenaWins || []).length >= 3 },
   { id: 'flawless', name: 'Onaantastbaar', text: 'Win zonder uitgeschakeld te worden', icon: '🛡', check: (p, m, place, deaths) => place === 1 && deaths === 0 },
   { id: 'collector', name: 'Verzamelaar', text: 'Speel alle personages vrij', icon: '🎨', check: (p, m, place, deaths, allSkins) => allSkins },
+  { id: 'precise', name: 'Precisie', text: '50% raak in een match (min. 30 schoten)', icon: '◎', check: (p, m) => m.shots >= 30 && m.hits / m.shots >= 0.5 },
+  { id: 'wallrunner', name: 'Muurloper', text: '15 wall-jumps in één match', icon: '⤴', check: (p, m) => m.wallJumps >= 15 },
   { id: 'level10', name: 'Arenaheld', text: 'Bereik level 10', icon: '⬆', check: (p) => levelInfo(p.xp).level >= 10 },
 ];

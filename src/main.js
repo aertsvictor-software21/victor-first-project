@@ -12,8 +12,8 @@ import { levelInfo, titleFor, dailyChallenges, challengeDef, matchStatValues, ap
 
 // Speelmodi: korte matches houden de "nog één potje"-drempel laag (ideaal voor een pauze).
 const MODES = {
-  flits: { label: 'Flitsmatch', duration: 90, scoreLimit: 10, meta: '6 spelers · 90 seconden · eerste tot 10 eliminaties' },
-  standaard: { label: 'Standaard', duration: 180, scoreLimit: 15, meta: '6 spelers · 3 minuten · eerste tot 15 eliminaties' },
+  flits: { label: 'Flitsmatch', duration: 90, scoreLimit: 12, meta: '20 spelers · 90 seconden · eerste tot 12 eliminaties' },
+  standaard: { label: 'Standaard', duration: 180, scoreLimit: 20, meta: '20 spelers · 3 minuten · eerste tot 20 eliminaties' },
 };
 
 const $ = (s) => document.querySelector(s);
@@ -87,10 +87,15 @@ function loadArena(id) {
   const def = getArena(id);
   arena = buildArena(def, activeQuality);
   scene.add(arena.group);
-  scene.fog = new THREE.Fog(def.sky.horizon, 70, 260);
+  const L = { hemi: 1.15, sun: 3.0, fog: [70, 260], sunPos: [36, 34, 16], ...(def.light || {}) };
+  scene.fog = new THREE.Fog(def.sky.horizon, L.fog[0], L.fog[1]);
   hemi.color.set(def.hemi[0]);
   hemi.groundColor.set(def.hemi[1]);
+  hemi.intensity = L.hemi;
   sun.color.set(def.sun);
+  sun.intensity = L.sun;
+  sun.position.set(...L.sunPos);
+  document.body.classList.toggle('dark-arena', !!def.dark);
   if (preview) placePreview();
 }
 
@@ -284,7 +289,8 @@ $('#nameInput').oninput = (e) => { state.profile.name = e.target.value.trim().sl
 // ------------------------------------------------------------------
 // Match-verloop
 // ------------------------------------------------------------------
-const BOT_NAMES = ['Zephyr', 'Nyx', 'Kyro', 'Raze', 'Bolt', 'Juno', 'Vex', 'Onyx', 'Kite', 'Rogue', 'Hex', 'Drift', 'Sable', 'Lynx'];
+const BOT_COUNT = 19;
+const BOT_NAMES = ['Zephyr', 'Nyx', 'Kyro', 'Raze', 'Bolt', 'Juno', 'Vex', 'Onyx', 'Kite', 'Rogue', 'Hex', 'Drift', 'Sable', 'Lynx', 'Ash', 'Blitz', 'Cipher', 'Dusk', 'Ember', 'Fury'];
 
 let starting = false;
 function startMatch() {
@@ -298,10 +304,11 @@ function startMatch() {
     if (preview) preview.root.visible = false;
     const names = [...BOT_NAMES].sort(() => Math.random() - 0.5);
     const skins = SKINS.filter((s) => s.id !== state.profile.skin).sort(() => Math.random() - 0.5);
-    const bots = Array.from({ length: 5 }, (_, i) => ({ name: names[i], skin: skins[i % skins.length] }));
+    // 20 spelers: jij + 19 bots
+    const bots = Array.from({ length: BOT_COUNT }, (_, i) => ({ name: names[i % names.length] + (i >= names.length ? ' ' + (Math.floor(i / names.length) + 1) : ''), skin: skins[i % skins.length] }));
     match = new Match({
       scene, arena, camera, hud,
-      settings: { ...state.settings, maxParticles: QUALITY[activeQuality].particles },
+      settings: { ...state.settings, maxParticles: QUALITY[activeQuality].particles, charShadows: activeQuality === 'high' ? 'all' : activeQuality === 'medium' ? 'near' : 'none' },
       playerProfile: { name: state.profile.name, skin: getSkin(state.profile.skin) },
       bots, difficulty: resolveDifficulty(), audio, mode: MODES[state.settings.mode],
     });
@@ -468,7 +475,10 @@ function showResults(st) {
   $('#podium').innerHTML = order.map((f, i) => f ? `<div class="pod p${[2, 1, 3][i]}"><div class="who">${f.name}${f.isPlayer ? ' (jij)' : ''}</div><div class="ball" style="background:${hex(f.skin.body)}"></div><div class="block">${[2, 1, 3][i]}</div></div>` : '').join('');
   hud.renderBoard($('#resBoard'), st, true);
   const row = (label, val, cls = 'up') => `<div class="reward"><span>${label}</span><b class="${cls}">${val}</b></div>`;
-  $('#resRewards').innerHTML = `<h3>Beloningen</h3>
+  const ms = match.stats, acc = ms.shots ? Math.round((ms.hits / ms.shots) * 100) : 0;
+  $('#resRewards').innerHTML = `<h3>Jouw skill</h3>
+    <div class="skill-row"><div><b>${acc}%</b><small>Raak</small></div><div><b>${ms.headshots}</b><small>Headshots</small></div><div><b>${ms.wallJumps}</b><small>Wall-jumps</small></div></div>
+    <h3>Beloningen</h3>
     <div class="lvl-row"><div class="lvl-badge ${leveled ? 'up' : ''}">${L.level}</div><div style="flex:1"><div class="lvl-bar"><i id="lvlFill"></i></div>
       <div class="lvl-meta">${leveled ? `<b>Level omhoog!</b>${titleFor(L.level) !== titleFor(prevLevel) ? ` Nieuwe titel: ${titleFor(L.level)}` : ''}` : `Nog ${L.need - L.into} XP tot level ${L.level + 1}`}${nextSkin ? ` · ${nextSkin.unlockXp - prof.xp} XP tot ${nextSkin.name}` : ''}</div></div></div>
     ${row('Match + plaats', '+' + (baseXp + placeXp))}

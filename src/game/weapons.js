@@ -5,7 +5,7 @@ import { FX_COLORS } from '../style/palette.js';
 export const WEAPONS = {
   blaster: {
     id: 'blaster', name: 'Pulsgeweer', key: '1', icon: '◉',
-    fireRate: 9, damage: 9, headMul: 1.6, speed: 70, gravity: 0, spread: 0.012,
+    fireRate: 9, damage: 9, headMul: 2.0, speed: 70, gravity: 0, spread: 0.012,
     mag: 24, reload: 1.1, radius: 0.16, splash: 0, bounces: 0, life: 1.2, knock: 1.5,
     colors: FX_COLORS.blaster, botRange: 16,
   },
@@ -112,6 +112,7 @@ export class Projectiles {
           this.hooks.explode(p.pos.clone(), p.w, p.owner, hitChar);
         } else {
           this.hooks.damage(hitChar, p.w.damage * (head ? p.w.headMul : 1), p.owner, { head, dir, knock: p.w.knock, weapon: p.w });
+          this.hooks.hit?.(p.owner);
           this.fx.impact(p.pos, dir.clone().negate(), p.w.colors);
         }
         done = true;
